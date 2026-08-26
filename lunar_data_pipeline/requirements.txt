@@ -3,3 +3,8 @@ shapely>=2.0
 geopandas>=1.0
 opencv-python>=4.8
 pytest>=7.0
+
+# Phase 2: RIFT2 illumination-invariant matching
+# phasecongruency>=1.0.4   # Kovesi's PC implementation (PyPI), backup option
+pyyaml>=6.0               # RIFT2 config file support
+joblib>=1.3                # RIFT2 parallel descriptor computation

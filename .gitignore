@@ -3,11 +3,15 @@
 /TMC2_ShapeFiles/
 /baseline_output/
 /baseline_output_relaxed/
+/comparison_output/
 /ch2_ohr_*/
 /ch2_tmc_*/
 *.zip
 candidate_pairs.json
 pair_manifest.json
+
+# Cloned dependencies
+/rift_reference/
 
 # Python cache
 __pycache__/
