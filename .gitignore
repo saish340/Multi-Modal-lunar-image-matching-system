@@ -1,0 +1,27 @@
+# Data & outputs (large, not committed)
+/OHRC_ShapeFiles/
+/TMC2_ShapeFiles/
+/baseline_output/
+/baseline_output_relaxed/
+/ch2_ohr_*/
+/ch2_tmc_*/
+*.zip
+candidate_pairs.json
+pair_manifest.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temp scripts
+*.tmp
+*.temp
