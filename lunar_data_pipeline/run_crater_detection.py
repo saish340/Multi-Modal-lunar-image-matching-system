@@ -86,6 +86,7 @@ def score_detections(
     gt_craters: list[CraterRecord],
     product,
     *,
+    gt_xy: list[tuple[float, float, float]] | None = None,
     match_radius_px: float = 150,
     match_diameter_ratio: float = 3.0,
 ) -> dict:
@@ -95,11 +96,20 @@ def score_detections(
       - centre distance < match_radius_px, AND
       - |log2(det_diameter / gt_diameter)| < log2(match_diameter_ratio)
 
+    *gt_xy* optionally supplies pre-projected ground-truth centres
+    ``(x, y, radius_px)`` in the SAME coordinate space as *detections*
+    (e.g. crop-relative pixels). When omitted, centres are projected to the
+    product's full-image pixel grid via the corner homography
+    (:func:`~lro_groundtruth.craters_to_pixels`).
+
     Returns dict with TP/FP/FN counts, precision, recall, F1, and per-detection matches.
     """
     from .lro_groundtruth import craters_to_pixels
 
-    gt_pixels = craters_to_pixels(gt_craters, product)  # (x, y, radius_px)
+    if gt_xy is not None:
+        gt_pixels = list(gt_xy)
+    else:
+        gt_pixels = craters_to_pixels(gt_craters, product)  # (x, y, radius_px)
     gt_matched = [False] * len(gt_pixels)
     results = []
 
@@ -218,11 +228,16 @@ def load_image_region(
     region_polygon=None,
     center_lonlat: tuple[float, float] | None = None,
     half_width_px: int = 6000,
+    pad_px: int = 0,
 ) -> tuple[np.ndarray, tuple[int, int], tuple[int, int]]:
     """Load an image region using geolocation CSV refinement.
 
     ``label`` must be a parsed ``LunarProduct`` (from ``pds4_parser``).
     Returns ``(crop, scan_range, pixel_range)``.
+
+    ``pad_px`` expands the located window by *pad_px* pixels on every side
+    (clamped to the product bounds) so ground-truth centres that lie right at
+    the located polygon's edge are kept comfortably inside the crop.
     """
     from shapely.geometry import Polygon, box
 
@@ -240,6 +255,16 @@ def load_image_region(
             scan_range = (0, label.lines - 1)
             pixel_range = (0, label.samples - 1)
 
+        if pad_px > 0:
+            scan_range = (
+                max(0, scan_range[0] - pad_px),
+                min(label.lines - 1, scan_range[1] + pad_px),
+            )
+            pixel_range = (
+                max(0, pixel_range[0] - pad_px),
+                min(label.samples - 1, pixel_range[1] + pad_px),
+            )
+
         s0, s1 = scan_range
         p0, p1 = pixel_range
         logger.info("Loading crop scan[%d,%d] pixel[%d,%d] from %s", s0, s1, p0, p1, label.file_path)
@@ -253,6 +278,75 @@ def load_image_region(
 # ---------------------------------------------------------------------------
 # Main pipeline
 # ---------------------------------------------------------------------------
+
+def build_params(resolution_m: float, overrides: dict) -> "DetectionParams":
+    """Return ``params_for_resolution`` with optional radius/FP-tuning overrides.
+
+    Supported overrides keys: ``max_radius_px``, ``full_res_max_radius_px``,
+    ``large_radius_scale``, ``hough_param2``.
+    """
+    params = params_for_resolution(resolution_m)
+    if "max_radius_px" in overrides and overrides["max_radius_px"]:
+        params.max_radius = int(overrides["max_radius_px"])
+    if "full_res_max_radius_px" in overrides and overrides["full_res_max_radius_px"]:
+        params.full_res_max_radius = int(overrides["full_res_max_radius_px"])
+    if "large_radius_scale" in overrides and overrides["large_radius_scale"]:
+        params.large_radius_scale = float(overrides["large_radius_scale"])
+    if "hough_param2" in overrides and overrides["hough_param2"]:
+        params.hough_param2 = int(overrides["hough_param2"])
+    return params
+
+
+def project_gt_to_crop(
+    gt_craters: list[CraterRecord],
+    product,
+    grid,
+    scan_range: tuple[int, int],
+    pixel_range: tuple[int, int],
+    *,
+    min_points: int = 8,
+) -> tuple[list[tuple[float, float, float]], np.ndarray | None]:
+    """Project GT (lon, lat) centres into crop-relative pixel coordinates.
+
+    Uses the geolocation CSV grid (:func:`csv_geolocation.fit_local_transforms`)
+    so centres land in the SAME coordinate space as the loaded crop:
+    ``x_crop = pixel - pixel_range[0]``, ``y_crop = scan - scan_range[0]``.
+
+    Returns ``(gt_xy, H_geo_to_px)`` where ``gt_xy`` is a list of
+    ``(x, y, radius_px)`` in crop-relative pixels. Craters whose centres fall
+    outside the crop's pixel box are still returned, but flagged implicitly by
+    their projected coordinates (callers report them as outside-frame if the
+    crop radius exceeds the image layout). If the local homography cannot be
+    fit (too few grid points), returns the full-image corner homography result
+    and ``None`` for the transform.
+    """
+    try:
+        h_px_to_geo, h_geo_to_px, n = fit_local_transforms(
+            grid, scan_range, pixel_range, min_points=min_points
+        )
+    except ValueError:
+        logger.warning(
+            "Local homography not available for crop %s; falling back to "
+            "full-image corner homography for GT projection",
+            (scan_range, pixel_range),
+        )
+        from .lro_groundtruth import craters_to_pixels
+        return craters_to_pixels(gt_craters, product), None
+
+    s0, s1 = scan_range
+    p0, p1 = pixel_range
+    gt_xy: list[tuple[float, float, float]] = []
+    for c in gt_craters:
+        geo_pt = np.array([[c.lon, c.lat]])
+        homo = np.column_stack([geo_pt, np.ones((1, 1))])
+        proj = (h_geo_to_px @ homo.T).T
+        proj = proj / proj[:, 2:3]
+        pix, scan = proj[0, 0], proj[0, 1]
+        x_crop = pix - p0
+        y_crop = scan - s0
+        radius_px = (c.diameter_km * 1000.0) / (2.0 * product.pixel_resolution_m)
+        gt_xy.append((float(x_crop), float(y_crop), float(radius_px)))
+    return gt_xy, h_geo_to_px
 
 def run_crater_detection(manifest_path: str, **kwargs) -> dict:
     """Run the full crater detection + GT evaluation pipeline."""
@@ -279,20 +373,44 @@ def run_crater_detection(manifest_path: str, **kwargs) -> dict:
 
     # Load crater GT
     crater_db_path = kwargs.get("crater_db")
-    if crater_db_path and Path(crater_db_path).exists():
+    crater_parquet_path = kwargs.get("crater_db_parquet")
+    if crater_parquet_path and Path(crater_parquet_path).exists():
+        from .lro_groundtruth import load_crater_database_parquet
+        all_craters = load_crater_database_parquet(
+            crater_parquet_path,
+            min_diameter_km=kwargs.get("min_diameter_km", 1.0),
+            max_diameter_km=kwargs.get("max_diameter_km", float("inf")),
+        )
+        gt_source = f"parquet ({Path(crater_parquet_path).name})"
+    elif crater_db_path and Path(crater_db_path).exists():
         all_craters = load_crater_database(
             crater_db_path,
             min_diameter_km=kwargs.get("min_diameter_km", 1.0),
         )
-        gt_craters = filter_by_region(all_craters, lon_min=lon_min, lon_max=lon_max,
-                                      lat_min=lat_min, lat_max=lat_max)
         gt_source = f"external ({Path(crater_db_path).name})"
     else:
+        all_craters = []
+        gt_source = "none"
+
+    gt_craters = filter_by_region(
+        all_craters, lon_min=lon_min, lon_max=lon_max,
+        lat_min=lat_min, lat_max=lat_max,
+    )
+    if not all_craters:
+        logger.warning(
+            "No crater database loaded (need --crater-db or --crater-db-parquet); "
+            "falling back to synthetic ground truth."
+        )
         gt_craters = generate_synthetic_craters(
             lon_min, lon_max, lat_min, lat_max,
             count=kwargs.get("synthetic_count", 20),
         )
         gt_source = "synthetic"
+    elif len(gt_craters) < 1:
+        logger.warning(
+            "Ground truth database loaded but 0 craters in the overlap region; "
+            "scoring will yield trivially zero recall."
+        )
 
     logger.info("GT source: %s — %d craters in overlap region", gt_source, len(gt_craters))
 
@@ -332,7 +450,10 @@ def run_crater_detection(manifest_path: str, **kwargs) -> dict:
             overlap_poly = ShapelyPolygon(pair["overlap"]["polygon_lonlat"])
 
             t0 = time.time()
-            gray, scan_range, pixel_range = load_image_region(label, csv_full, region_polygon=overlap_poly)
+            gray, scan_range, pixel_range = load_image_region(
+                label, csv_full, region_polygon=overlap_poly,
+                pad_px=kwargs.get("pad_px", 0),
+            )
             load_time = time.time() - t0
             logger.info("Loaded %s crop: %dx%d in %.1fs (scan %s, pixel %s)",
                         instrument, gray.shape[1], gray.shape[0], load_time, scan_range, pixel_range)
@@ -345,19 +466,45 @@ def run_crater_detection(manifest_path: str, **kwargs) -> dict:
             # Detect craters
             resolution_m = prod["pixel_resolution_m"]
             t0 = time.time()
+            params_overrides = {
+                "max_radius_px": kwargs.get("max_radius_px"),
+                "full_res_max_radius_px": kwargs.get("full_res_max_radius_px"),
+                "large_radius_scale": kwargs.get("large_radius_scale"),
+                "hough_param2": kwargs.get("hough_param2"),
+            }
+            params = build_params(resolution_m, params_overrides)
 
             if max(gray.shape) > 4000:
-                detections = detect_multiscale(gray, resolution_m=resolution_m)
+                detections = detect_multiscale(
+                    gray, resolution_m=resolution_m, params=params
+                )
             else:
-                params = params_for_resolution(resolution_m)
                 detections = detect_craters(gray, params)
 
             detect_time = time.time() - t0
             logger.info("Detected %d craters in %s in %.1fs", len(detections), instrument, detect_time)
 
+            # Project ground truth into crop-relative pixel coordinates using
+            # the geolocation CSV so GT and detections share the same space.
+            gt_xy = None
+            geo_info: dict | None = None
+            if csv_full and csv_full.exists():
+                try:
+                    grid = read_geolocation_csv(csv_full)
+                    gt_xy, h_geo_to_px = project_gt_to_crop(
+                        gt_craters, label, grid, scan_range, pixel_range
+                    )
+                    geo_info = {
+                        "projection": "geolocation_csv_local_homography",
+                        "n_gt_projected": len(gt_xy),
+                    }
+                except Exception as exc:
+                    logger.warning("GT crop projection failed (%s); using full-image coords", exc)
+
             # Score against GT
             score = score_detections(
                 detections, gt_craters, label,
+                gt_xy=gt_xy,
                 match_radius_px=kwargs.get("match_radius_px", 150),
             )
             logger.info(
@@ -367,10 +514,8 @@ def run_crater_detection(manifest_path: str, **kwargs) -> dict:
             )
 
             # Draw overlay
-            from .lro_groundtruth import craters_to_pixels
-            gt_px = craters_to_pixels(gt_craters, label)
             vis_path = output_dir / f"{instrument}_detections.png"
-            draw_overlay(gray, detections, gt_px, title=f"{instrument}: {len(detections)} detected, GT={len(gt_craters)}", output_path=vis_path)
+            draw_overlay(gray, detections, gt_xy, title=f"{instrument}: {len(detections)} detected, GT={len(gt_craters)}", output_path=vis_path)
 
             # Save preview of raw crop
             crop_path = output_dir / f"{instrument}_crop.png"
@@ -383,6 +528,7 @@ def run_crater_detection(manifest_path: str, **kwargs) -> dict:
                 "n_detections": len(detections),
                 "load_time_s": round(load_time, 2),
                 "detect_time_s": round(detect_time, 2),
+                "geolocation": geo_info,
                 "scoring": score,
             }
 
@@ -424,10 +570,17 @@ def main() -> None:
     )
     parser.add_argument("--manifest", required=True, help="Path to pair_manifest.json")
     parser.add_argument("--crater-db", default=None, help="Path to crater CSV database (Robbins/LU1319373/IAU)")
+    parser.add_argument("--crater-db-parquet", default=None, help="Path to crater parquet (e.g. HF Robbins subset)")
     parser.add_argument("--synthetic", action="store_true", help="Use synthetic GT (fallback)")
     parser.add_argument("--synthetic-count", type=int, default=20, help="Number of synthetic craters")
     parser.add_argument("--min-diameter-km", type=float, default=1.0, help="Min crater diameter in GT (km)")
+    parser.add_argument("--max-diameter-km", type=float, default=float("inf"), help="Max crater diameter in GT (km)")
     parser.add_argument("--match-radius-px", type=float, default=150, help="Max centre distance for a TP match (px)")
+    parser.add_argument("--max-radius-px", type=int, default=None, help="Override maximum crater radius (px) for single-frame detection")
+    parser.add_argument("--full-res-max-radius-px", type=int, default=None, help="Override radius (px) above which large craters use the downsampled pass")
+    parser.add_argument("--large-radius-scale", type=float, default=None, help="Override downsample factor for the large-radius pass")
+    parser.add_argument("--hough-param2", type=int, default=None, help="Override HoughCircles accumulator threshold (higher = fewer, stronger circles)")
+    parser.add_argument("--pad-px", type=int, default=0, help="Pad the located crop window by this many pixels per side")
     parser.add_argument("--output-dir", default="crater_output", help="Output directory")
     parser.add_argument("--include-ohrc", action="store_true", help="Also run detection on OHRC (slow, 0.2 m/px)")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -442,11 +595,19 @@ def main() -> None:
     run_crater_detection(
         args.manifest,
         crater_db=args.crater_db,
+        crater_db_parquet=args.crater_db_parquet,
         synthetic=args.synthetic,
         synthetic_count=args.synthetic_count,
         min_diameter_km=args.min_diameter_km,
+        max_diameter_km=args.max_diameter_km,
         match_radius_px=args.match_radius_px,
+        pad_px=args.pad_px,
+        max_radius_px=args.max_radius_px,
+        full_res_max_radius_px=args.full_res_max_radius_px,
+        large_radius_scale=args.large_radius_scale,
+        hough_param2=args.hough_param2,
         output_dir=args.output_dir,
+        include_ohrc=args.include_ohrc,
     )
 
 

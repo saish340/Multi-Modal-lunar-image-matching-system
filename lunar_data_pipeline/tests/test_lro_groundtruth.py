@@ -20,6 +20,7 @@ try:
         filter_by_region,
         generate_synthetic_craters,
         load_crater_database,
+        load_crater_database_parquet,
         product_bounds,
     )
 except ImportError:
@@ -28,6 +29,7 @@ except ImportError:
         filter_by_region,
         generate_synthetic_craters,
         load_crater_database,
+        load_crater_database_parquet,
         product_bounds,
     )
 
@@ -189,3 +191,54 @@ class TestProductBounds:
         assert lon_max == pytest.approx(25.5)
         assert lat_min == pytest.approx(-13.5)
         assert lat_max == pytest.approx(-13.0)
+
+
+# ---------------------------------------------------------------------------
+# Tests — load_crater_database_parquet (HF Robbins subset format)
+# ---------------------------------------------------------------------------
+
+class TestLoadParquet:
+
+    def _write(self, tmp_path: Path, rows: list[dict]) -> Path:
+        import pandas as pd
+        path = tmp_path / "craters.parquet"
+        df = pd.DataFrame(
+            rows,
+            columns=["crater_id", "latitude_deg", "longitude_deg",
+                     "diameter_km", "depth_km", "size_class"],
+        )
+        df.to_parquet(path, index=False)
+        return path
+
+    def test_load_parquet(self, tmp_path: Path):
+        path = self._write(tmp_path, [
+            {"crater_id": "11-0-05812", "latitude_deg": -13.556,
+             "longitude_deg": 25.249, "diameter_km": 2.17, "depth_km": 0.3,
+             "size_class": "small"},
+            {"crater_id": "11-3-00076", "latitude_deg": -13.239,
+             "longitude_deg": 25.212, "diameter_km": 26.66, "depth_km": 1.2,
+             "size_class": "medium"},
+        ])
+        craters = load_crater_database_parquet(path)
+        assert len(craters) == 2
+        assert craters[0].lon == pytest.approx(25.249)
+        assert craters[0].lat == pytest.approx(-13.556)
+        assert craters[0].diameter_km == pytest.approx(2.17)
+        assert craters[0].depth_km == pytest.approx(0.3)
+        assert craters[0].name == "11-0-05812"
+
+    def test_parquet_min_diameter_filter(self, tmp_path: Path):
+        path = self._write(tmp_path, [
+            {"crater_id": "a", "latitude_deg": 0.0, "longitude_deg": 0.0,
+             "diameter_km": 1.0, "depth_km": None, "size_class": "small"},
+            {"crater_id": "b", "latitude_deg": 1.0, "longitude_deg": 1.0,
+             "diameter_km": 5.0, "depth_km": None, "size_class": "small"},
+        ])
+        craters = load_crater_database_parquet(path, min_diameter_km=2.0)
+        assert len(craters) == 1
+        assert craters[0].name == "b"
+
+    def test_parquet_nonexistent(self):
+        with pytest.raises(FileNotFoundError):
+            load_crater_database_parquet("nonexistent.parquet")
+

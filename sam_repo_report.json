@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "primary_repo": {
+    "full_name": "vam/Universal-Crater-Detection-with-SAM",
+    "exists": true,
+    "archived": false,
+    "stargazers": 4,
+    "description": null,
+    "default_branch": "main",
+    "files": [
+      "README.md",
+      "SAM_Image mask generation.ipynb",
+      "images.zip"
+    ],
+    "has_requirements": false,
+    "has_weights": false,
+    "has_source_code": true,
+    "fetch_error": null,
+    "is_usable": false
+  },
+  "peer_reviewed_method": {
+    "authors": "Giannakis, Bhardwaj, Sam, Leontidis",
+    "title": "A flexible deep learning crater detection scheme using Segment Anything Model (SAM)",
+    "journal": "Icarus 408, 115797 (2024)",
+    "arxiv": "arXiv:2304.07764",
+    "doi": "10.1016/j.icarus.2023.115797"
+  },
+  "verdict": "exists_source_no_weights",
+  "integration_recommendation": "NOT recommended for direct integration yet. The named repo is a minimal demo (README + a single notebook + image archive) with no released weights, no dependency manifest, and no trainable code, so it is not directly usable. The actual peer-reviewed method is the Giannakis et al. 2024 Icarus work, which would need SAM weights from Meta (downloadable) and the paper's shape-index post-processing implemented from scratch, plus a GPU.",
+  "searches": {
+    "segment anything crater detection": [
+      {
+        "full_name": "dajuarez4/MooCraDee",
+        "stars": 1,
+        "archived": false,
+        "description": "Crater detection from images using Segment Anything (SAM) + OpenCV. Outputs an annotated image with red circles and a CSV of crater centers/radii.",
+        "pushed_at": "2026-06-03T15:31:16Z"
+      },
+      {
+        "full_name": "IsaDadoulis/Segment-Anything-Model-Crater-Detection-Algorithm",
+        "stars": 0,
+        "archived": false,
+        "description": null,
+        "pushed_at": "2025-08-06T12:39:51Z"
+      }
+    ],
+    "SAM lunar crater detection": [
+      {
+        "full_name": "sbolanowski/moon_crater_detection",
+        "stars": 0,
+        "archived": false,
+        "description": "Automatic detection of craters on the lunar surface",
+        "pushed_at": "2025-08-19T16:23:20Z"
+      }
+    ]
+  }
+}

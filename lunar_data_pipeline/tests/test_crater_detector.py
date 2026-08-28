@@ -181,10 +181,55 @@ class TestValidation:
 
 
 # ---------------------------------------------------------------------------
-# Tests — resolution-based params
+# Tests — coarse-to-fine large-radius detection
 # ---------------------------------------------------------------------------
 
-class TestParamsForResolution:
+class TestLargeRadiusCoarseToFine:
+
+    def test_large_circle_via_downsampled_pass(self):
+        # A 200 px-radius circle exceeds full_res_max_radius (100), so it must
+        # be found through the downsampled coarse-to-fine pass and mapped back.
+        img = np.zeros((1000, 1000), dtype=np.uint8)
+        cv2.circle(img, (500, 500), 200, 200, 6)   # bright rim
+        cv2.circle(img, (500, 500), 180, 30, -1)    # dark floor
+
+        params = DetectionParams(
+            min_radius=20, max_radius=500,
+            full_res_max_radius=100, large_radius_scale=4.0,
+            hough_param2=20,
+        )
+        detections = detect_craters(img, params)
+        assert len(detections) >= 1
+        best = max(detections, key=lambda d: d.radius)
+        assert best.radius >= 150           # mapped back near full-res 200
+        assert abs(best.cx - 500) < 40
+        assert abs(best.cy - 500) < 40
+
+    def test_small_radius_does_not_use_downsized_pass(self):
+        # When max_radius <= full_res_max_radius there is no second pass and
+        # results are identical to a single full-res HoughCircles call.
+        img = np.zeros((500, 500), dtype=np.uint8)
+        cv2.circle(img, (250, 250), 60, 200, 4)
+        cv2.circle(img, (250, 250), 45, 30, -1)
+        params = DetectionParams(min_radius=15, max_radius=120,
+                                 full_res_max_radius=200, hough_param2=15)
+        detections = detect_craters(img, params)
+        assert len(detections) >= 1
+        assert all(d.radius <= 120 for d in detections)
+
+    def test_downscale_edge(self):
+        from lunar_data_pipeline.crater_detector import _downscale_edge
+        import numpy as np
+        arr = np.zeros((800, 800), dtype=np.uint8)
+        small, applied = _downscale_edge(arr, 4.0)
+        assert small.shape == (200, 200)
+        assert applied == pytest.approx(4.0)
+        same, one = _downscale_edge(arr, 1.0)
+        assert same.shape == arr.shape
+        assert one == pytest.approx(1.0)
+
+
+
 
     def test_ohrc_resolution(self):
         params = params_for_resolution(0.2)
@@ -193,7 +238,11 @@ class TestParamsForResolution:
     def test_tmc2_resolution(self):
         params = params_for_resolution(6.13)
         assert params.min_radius == 15
-        assert params.max_radius == 500
+        # max_radius was raised from the old 500 (which only covered ~6 km
+        # craters) so large real craters (9-27 km at 6.13 m/px -> 778-2175 px
+        # radius) are in range, via the coarse-to-fine pyramid.
+        assert params.max_radius == 2500
+        assert params.full_res_max_radius == 250
 
     def test_low_resolution(self):
         params = params_for_resolution(100.0)

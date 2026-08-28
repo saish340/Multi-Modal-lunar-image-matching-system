@@ -1,0 +1,74 @@
+{
+  "11-0-05812": {
+    "diameter_km": 2.17,
+    "lon": 25.249,
+    "lat": -13.556,
+    "tmc2": {
+      "crop_px": [
+        383.8,
+        4281.0
+      ],
+      "radius_px": 177.0,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(500)": false
+    },
+    "ohrc": {
+      "full_image_px": [
+        819.2,
+        26022.2
+      ],
+      "radius_px": 5425.0,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(5000)": true,
+      "radius_exceeds_frame_small_axis": false
+    }
+  },
+  "11-0-05828": {
+    "diameter_km": 9.54,
+    "lon": 25.178,
+    "lat": -13.512,
+    "tmc2": {
+      "crop_px": [
+        724.9,
+        4019.5
+      ],
+      "radius_px": 778.1,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(500)": true
+    },
+    "ohrc": {
+      "full_image_px": [
+        9950.8,
+        31330.9
+      ],
+      "radius_px": 23850.0,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(5000)": true,
+      "radius_exceeds_frame_small_axis": true
+    }
+  },
+  "11-3-00076": {
+    "diameter_km": 26.66,
+    "lon": 25.212,
+    "lat": -13.239,
+    "tmc2": {
+      "crop_px": [
+        608.8,
+        2318.0
+      ],
+      "radius_px": 2174.6,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(500)": true
+    },
+    "ohrc": {
+      "full_image_px": [
+        4822.5,
+        63493.1
+      ],
+      "radius_px": 66650.0,
+      "in_frame": true,
+      "radius_exceeds_detector_cap(5000)": true,
+      "radius_exceeds_frame_small_axis": true
+    }
+  }
+}

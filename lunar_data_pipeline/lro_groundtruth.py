@@ -153,6 +153,73 @@ def load_crater_database(
     return craters
 
 
+def load_crater_database_parquet(
+    parquet_path: str | Path,
+    *,
+    min_diameter_km: float = 0.0,
+    max_diameter_km: float = float("inf"),
+) -> list[CraterRecord]:
+    """Load crater ground truth from a pandas parquet file (e.g. the HF Robbins subset).
+
+    Expects columns ``latitude_deg``, ``longitude_deg``, ``diameter_km`` and
+    optionally ``depth_km`` / ``crater_id`` (names normalised, so
+    ``latitude_deg``-style names matching the candidate-ranking contract are
+    preferred). Requires ``pandas`` and ``pyarrow``/``fastparquet`` at runtime.
+    """
+    import pandas as pd
+
+    parquet_path = Path(parquet_path)
+    if not parquet_path.exists():
+        raise FileNotFoundError(f"Crater parquet not found: {parquet_path}")
+
+    df = pd.read_parquet(parquet_path)
+
+    def pick(*names: str) -> str | None:
+        for n in names:
+            if n in df.columns:
+                return n
+        return None
+
+    lat_col = pick("latitude_deg", "lat_deg", "latitude", "lat", "center_lat")
+    lon_col = pick("longitude_deg", "lon_deg", "longitude", "lon", "center_lon")
+    dia_col = pick("diameter_km", "diam_km", "diameter", "d_km")
+    dep_col = pick("depth_km", "depth")
+    id_col = pick("crater_id", "name", "feature_name")
+
+    if lat_col is None or lon_col is None or dia_col is None:
+        raise ValueError(
+            f"Cannot auto-detect lat/lon/diameter columns from parquet columns: "
+            f"{list(df.columns)}"
+        )
+
+    lat = pd.to_numeric(df[lat_col], errors="coerce")
+    lon = pd.to_numeric(df[lon_col], errors="coerce")
+    dia = pd.to_numeric(df[dia_col], errors="coerce")
+    dep = pd.to_numeric(df[dep_col], errors="coerce") if dep_col else None
+
+    craters: list[CraterRecord] = []
+    for idx in range(len(df)):
+        d = float(dia[idx]) if pd.notna(dia[idx]) else float("nan")
+        if not (min_diameter_km <= d <= max_diameter_km):
+            continue
+        lat_v = float(lat[idx])
+        lon_v = float(lon[idx])
+        if pd.isna(lat_v) or pd.isna(lon_v):
+            continue
+        dep_v = float(dep[idx]) if dep is not None and pd.notna(dep[idx]) else None
+        name_v = str(df[id_col].iloc[idx]) if id_col else ""
+        craters.append(CraterRecord(
+            lat=lat_v, lon=lon_v, diameter_km=d,
+            depth_km=dep_v, name=name_v, row_id=int(idx),
+        ))
+
+    logger.info(
+        "Loaded %d craters from %s (parquet, min_d=%.1f km, max_d=%.1f km)",
+        len(craters), parquet_path.name, min_diameter_km, max_diameter_km,
+    )
+    return craters
+
+
 # ---------------------------------------------------------------------------
 # Region filtering
 # ---------------------------------------------------------------------------

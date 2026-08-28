@@ -53,7 +53,18 @@ class DetectionParams:
 
     # HoughCircles
     min_radius: int = 10             # Minimum crater radius in pixels
-    max_radius: int = 500            # Maximum crater radius in pixels
+    max_radius: int = 2500           # Maximum crater radius in pixels (largest we return)
+
+    # Large-radius handling. A single HoughCircles pass across a very wide
+    # radius range at full resolution is slow and noisy. Above
+    # ``full_res_max_radius`` we switch to a coarse-to-fine (downsampled)
+    # pass: the edge image is shrunk by ``large_radius_scale``, circles are
+    # sought there in a small radius range, and their coordinates/radii are
+    # mapped back to full-resolution pixels. Zero/one of these fields leave
+    # detection as a single full-resolution pass (backward compatible).
+    full_res_max_radius: int = 250          # largest radius sought at full res
+    large_radius_scale: float = 4.0         # downsample factor for the large pass
+
     dp: float = 1.2                  # HoughCircles accumulator resolution
     min_dist: int = 30               # Minimum distance between circle centres
     hough_param1: int = 100          # HoughCircles upper Canny threshold
@@ -125,9 +136,20 @@ def morphological_enhance(gray: np.ndarray, params: DetectionParams | None = Non
 def detect_circles(
     edge_image: np.ndarray,
     params: DetectionParams | None = None,
+    *,
+    min_radius: int | None = None,
+    max_radius: int | None = None,
 ) -> list[tuple[int, int, int]]:
-    """Run HoughCircles on an edge image. Returns list of (cx, cy, radius)."""
+    """Run HoughCircles on an edge image. Returns list of (cx, cy, radius).
+
+    ``min_radius``/``max_radius`` override the corresponding fields of
+    *params* when given; otherwise the params' radius range is used.
+    """
     params = params or DetectionParams()
+    rmin = int(min_radius if min_radius is not None else params.min_radius)
+    rmax = int(max_radius if max_radius is not None else params.max_radius)
+    if rmax < rmin:
+        return []
 
     circles = cv2.HoughCircles(
         edge_image,
@@ -136,8 +158,8 @@ def detect_circles(
         minDist=params.min_dist,
         param1=params.hough_param1,
         param2=params.hough_param2,
-        minRadius=params.min_radius,
-        maxRadius=params.max_radius,
+        minRadius=rmin,
+        maxRadius=rmax,
     )
 
     if circles is None:
@@ -204,6 +226,62 @@ def validate_detection(
     return conf, circularity, mean_val
 
 
+def _downscale_edge(edge_image: np.ndarray, scale: float) -> tuple[np.ndarray, float]:
+    """Shrink an edge image by *scale* (>1). Returns (resized, applied_scale)."""
+    h, w = edge_image.shape[:2]
+    if scale <= 1.0:
+        return edge_image, 1.0
+    nw = max(int(round(w / scale)), 1)
+    nh = max(int(round(h / scale)), 1)
+    resized = cv2.resize(edge_image, (nw, nh), interpolation=cv2.INTER_AREA)
+    applied = w / nw if nw else 1.0
+    return resized, applied
+
+
+def _detect_candidates(
+    edge_image: np.ndarray,
+    params: DetectionParams | None = None,
+) -> list[tuple[int, int, int]]:
+    """Collect circle candidates across a coarse-to-fine radius decomposition.
+
+    Circles up to ``params.full_res_max_radius`` are sought on the full-
+    resolution edge image. Larger circles (up to ``params.max_radius``) are
+    sought on a downsampled copy (factor ``params.large_radius_scale``) and
+    their centres/radii mapped back to full-resolution pixels.
+
+    Returns candidates as ``(cx, cy, radius)`` in FULL-resolution pixels.
+    """
+    params = params or DetectionParams()
+    rmin = params.min_radius
+    rmax = params.max_radius
+    full_res_cap = params.full_res_max_radius
+
+    candidates: list[tuple[int, int, int]] = []
+
+    # Pass 1: full-resolution, small-to-medium radii.
+    base_max = rmax if full_res_cap is None or rmax <= full_res_cap else int(min(rmax, full_res_cap))
+    if base_max >= rmin:
+        candidates.extend(detect_circles(edge_image, params, max_radius=base_max))
+
+    # Pass 2: coarse-to-fine for the large-radius tail.
+    if rmax > base_max:
+        small_img, applied = _downscale_edge(edge_image, params.large_radius_scale)
+        small_min = max(int(round(rmin / applied)), 1)
+        small_max = max(int(round(rmax / applied)), 1)
+        small_h, small_w = small_img.shape[:2]
+        for cx, cy, r in detect_circles(small_img, params, min_radius=small_min, max_radius=small_max):
+            # Map back to full resolution.
+            fx = int(round(cx * applied))
+            fy = int(round(cy * applied))
+            fr = int(round(r * applied))
+            # Keep only circles that are genuinely "large" in full res (avoid
+            # double counting a medium crater that also appears in pass 1).
+            if fr >= base_max:
+                candidates.append((fx, fy, fr))
+
+    return candidates
+
+
 def detect_craters(
     gray: np.ndarray,
     params: DetectionParams | None = None,
@@ -238,8 +316,9 @@ def detect_craters(
     else:
         edge_image = cv2.Canny(enhanced, params.canny_low, params.canny_high)
 
-    # 3. Detect circles
-    candidates = detect_circles(edge_image, params)
+    # 3. Detect circles — coarse-to-fine so large craters are found without a
+    #    single, slow, noisy HoughCircles pass over the full radius range.
+    candidates = _detect_candidates(edge_image, params)
     logger.info("HoughCircles found %d candidates", len(candidates))
 
     # 4. Validate and score
@@ -281,10 +360,15 @@ def params_for_resolution(resolution_m: float) -> DetectionParams:
             bottomhat_ksize=61,
         )
     elif resolution_m <= 10.0:
-        # Medium resolution (TMC-2): moderate crater sizes
+        # Medium resolution (TMC-2): moderate crater sizes. max_radius raised
+        # well above the old 500 px (which only covered ~6 km craters) so large
+        # real craters (9-27 km -> 778-2175 px radius at 6.13 m/px) are in
+        # range; the coarse-to-fine pyramid keeps big-radius search cheap.
         return DetectionParams(
             min_radius=15,
-            max_radius=500,
+            max_radius=2500,
+            full_res_max_radius=250,
+            large_radius_scale=4.0,
             dp=1.2,
             min_dist=30,
             hough_param2=35,
@@ -314,14 +398,16 @@ def detect_multiscale(
     resolution_m: float,
     tile_size: int = 2048,
     overlap_px: int = 256,
+    params: DetectionParams | None = None,
 ) -> list[CraterDetection]:
     """Detect craters across tiles of a large image, merging overlapping results.
 
     Useful for OHRC-scale images (101074 x 12000) where HoughCircles
-    parameter tuning is difficult at full resolution.
+    parameter tuning is difficult at full resolution. *params* may be supplied
+    to override the resolution-derived defaults (e.g. a raised radius cap).
     """
     h, w = gray.shape[:2]
-    params = params_for_resolution(resolution_m)
+    params = params or params_for_resolution(resolution_m)
 
     if h <= tile_size and w <= tile_size:
         return detect_craters(gray, params)

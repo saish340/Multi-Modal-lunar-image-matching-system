@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0",
+  "parsed_labels": 6,
+  "criterion": {
+    "min_sun_elevation_deg": 20.0,
+    "max_azimuth_diff_deg": 30.0
+  },
+  "sun_matched_pairs": [],
+  "all_combinations": [
+    {
+      "ohrc_id": "ch2_ohr_ncp_20231004T0406038822_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20250707T1853051045_d_img_d18",
+      "ohrc_sun_elevation_deg": 9.488661,
+      "ohrc_sun_azimuth_deg": 272.874656,
+      "tmc2_sun_elevation_deg": 69.353378,
+      "tmc2_sun_azimuth_deg": 31.095248,
+      "azimuth_diff_deg": 118.22059199999998,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 9.5 < 20.0",
+        "azimuth diff 118.2 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20231004T0406038822_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T0627378557_d_img_d18",
+      "ohrc_sun_elevation_deg": 9.488661,
+      "ohrc_sun_azimuth_deg": 272.874656,
+      "tmc2_sun_elevation_deg": 50.935114,
+      "tmc2_sun_azimuth_deg": 69.556239,
+      "azimuth_diff_deg": 156.681583,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 9.5 < 20.0",
+        "azimuth diff 156.7 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20231004T0406038822_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T1023298745_d_img_d18",
+      "ohrc_sun_elevation_deg": 9.488661,
+      "ohrc_sun_azimuth_deg": 272.874656,
+      "tmc2_sun_elevation_deg": 50.775256,
+      "tmc2_sun_azimuth_deg": 69.603519,
+      "azimuth_diff_deg": 156.728863,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 9.5 < 20.0",
+        "azimuth diff 156.7 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20250707T1853051045_d_img_d18",
+      "ohrc_sun_elevation_deg": 6.729185,
+      "ohrc_sun_azimuth_deg": 342.04029,
+      "tmc2_sun_elevation_deg": 69.353378,
+      "tmc2_sun_azimuth_deg": 31.095248,
+      "azimuth_diff_deg": 49.054958,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 6.7 < 20.0",
+        "azimuth diff 49.1 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T0627378557_d_img_d18",
+      "ohrc_sun_elevation_deg": 6.729185,
+      "ohrc_sun_azimuth_deg": 342.04029,
+      "tmc2_sun_elevation_deg": 50.935114,
+      "tmc2_sun_azimuth_deg": 69.556239,
+      "azimuth_diff_deg": 87.51594899999998,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 6.7 < 20.0",
+        "azimuth diff 87.5 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T1023298745_d_img_d18",
+      "ohrc_sun_elevation_deg": 6.729185,
+      "ohrc_sun_azimuth_deg": 342.04029,
+      "tmc2_sun_elevation_deg": 50.775256,
+      "tmc2_sun_azimuth_deg": 69.603519,
+      "azimuth_diff_deg": 87.56322899999998,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 6.7 < 20.0",
+        "azimuth diff 87.6 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20250707T1853051045_d_img_d18",
+      "ohrc_sun_elevation_deg": 5.515556,
+      "ohrc_sun_azimuth_deg": 337.069783,
+      "tmc2_sun_elevation_deg": 69.353378,
+      "tmc2_sun_azimuth_deg": 31.095248,
+      "azimuth_diff_deg": 54.025465000000054,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 5.5 < 20.0",
+        "azimuth diff 54.0 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T0627378557_d_img_d18",
+      "ohrc_sun_elevation_deg": 5.515556,
+      "ohrc_sun_azimuth_deg": 337.069783,
+      "tmc2_sun_elevation_deg": 50.935114,
+      "tmc2_sun_azimuth_deg": 69.556239,
+      "azimuth_diff_deg": 92.48645600000003,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 5.5 < 20.0",
+        "azimuth diff 92.5 > 30.0"
+      ]
+    },
+    {
+      "ohrc_id": "ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+      "tmc2_id": "ch2_tmc_ncn_20260813T1023298745_d_img_d18",
+      "ohrc_sun_elevation_deg": 5.515556,
+      "ohrc_sun_azimuth_deg": 337.069783,
+      "tmc2_sun_elevation_deg": 50.775256,
+      "tmc2_sun_azimuth_deg": 69.603519,
+      "azimuth_diff_deg": 92.53373600000003,
+      "sun_matched": false,
+      "reasons": [
+        "OHRC elevation 5.5 < 20.0",
+        "azimuth diff 92.5 > 30.0"
+      ]
+    }
+  ]
+}

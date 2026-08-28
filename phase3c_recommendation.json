@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "phase": "3c-step3-recommendation",
+  "generated": "2026-08-27",
+  "free_sun_match_result": {
+    "downloaded_products": {
+      "ohrc": [
+        "ch2_ohr_ncp_20231004T0406038822_d_img_d18 (elev 9.5)",
+        "ch2_ohr_ncp_20260103T0609041371_d_img_d18 (elev 6.7)",
+        "ch2_ohr_ncp_20260103T1005176450_d_img_d18 (elev 5.5)"
+      ],
+      "tmc2": [
+        "ch2_tmc_ncn_20250707T1853051045_d_img_d18 (elev 69.4)",
+        "ch2_tmc_ncn_20260813T0627378557_d_img_d18 (elev 50.9)",
+        "ch2_tmc_ncn_20260813T1023298745_d_img_d18 (elev 50.8)"
+      ]
+    },
+    "combinations_checked": 9,
+    "sun_matched_pairs": 0,
+    "criterion": {
+      "both_sun_elevations_gt_deg": 20.0,
+      "azimuth_diff_lt_deg": 30.0
+    },
+    "conclusion": "Every downloaded OHRC strip was acquired at low sun (5.5-9.5 deg elevation). None passes the sun-match criterion vs any TMC-2 (>20 deg elev, <30 deg az diff). Fair crater-detection scoring on a matched-illumination pair is NOT possible with the current downloads."
+  },
+  "decision": "no_sun_matched_pair_available_freely",
+  "recommended_download": {
+    "note": "Single exact PRADAN download. Sun angles are UNKNOWN until this OHRC label is pulled (PRADAN catalog angles are zero-filled); the two other downloaded OHRC of the same era are both low-sun, so this 2021-acquisition may also be low-sun -- verify the tiny label first.",
+    "ohrc_download": "ch2_ohr_ncp_20210402T0155096873_d_img_d18.zip",
+    "tmc2_partner_already_downloaded": "ch2_tmc_ncn_20250707T1853051045_d_img_d18.zip",
+    "overlap_percentage_smaller_pct": 100.0,
+    "crater_density_per_deg2": 32.2,
+    "crater_count_in_footprint": 3,
+    "footprint_center_lonlat": [25.2, -13.35],
+    "why": "Best not-yet-downloaded candidate: 100% overlap with an already-downloaded TMC-2, highest crater density among 100%-overlap OHRC not yet pulled. Only ONE new image download required (TMC-2 partner already on disk).",
+    "caveats": [
+      "Sun-match still unverified (needs the 20210402 OHRC label).",
+      "Sample is small (3 craters in footprint; ~10 after completeness correction) - P/R/F1 will be honest but low-N."
+    ]
+  },
+  "next_actions": [
+    "ON CONFIRMATION: download ch2_ohr_ncp_20210402T0155096873_d_img_d18.zip from PRADAN (multi-GB).",
+    "Re-run check_existing_sun_match to test the new OHRC label vs ch2_tmc_ncn_20250707T1853051045.",
+    "If matched: run crater detection + real Robbins-HF GT scoring, report honest small-sample P/R/F1.",
+    "If still low-sun: either accept the low-sun pair with caveats, or identify a high-sun OHRC via tiny label-only fetches across the top K candidates."
+  ]
+}

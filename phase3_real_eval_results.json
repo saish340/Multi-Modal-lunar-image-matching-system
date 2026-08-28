@@ -1,0 +1,106 @@
+{
+  "pair": "D:\\Multi-Modal-lunar-image-matching-system\\pair_manifest.json",
+  "gt_source": "Robbins HF subset parquet (partial ~30%)",
+  "instruments_evaluated": [
+    "TMC-2 (full detection run)",
+    "OHRC (geometric feasibility analysis)"
+  ],
+  "aggregate": {
+    "tmc2": {
+      "tp": 1,
+      "fp": 2052,
+      "fn": 2,
+      "n_gt": 3,
+      "precision": 0.0005,
+      "recall": 0.3333,
+      "f1": 0.001
+    }
+  },
+  "per_crater": [
+    {
+      "crater_id": "11-0-05812",
+      "diameter_km": 2.17,
+      "lon": 25.249,
+      "lat": -13.556,
+      "tmc2": {
+        "result": "FOUND",
+        "det_px": [
+          311.0,
+          4361.0
+        ],
+        "det_radius_px": 213.0,
+        "gt_px": [
+          383.8,
+          4281.0
+        ],
+        "centre_dist_px": 108.2,
+        "iou": 0.2453
+      },
+      "ohrc": {
+        "result": "MISSED (structurally undetectable)",
+        "gt_full_image_px": [
+          819.2,
+          26022.2
+        ],
+        "radius_px": 5425.0,
+        "reasons": [
+          "radius_exceeds_detector_cap(5000px)"
+        ]
+      }
+    },
+    {
+      "crater_id": "11-0-05828",
+      "diameter_km": 9.54,
+      "lon": 25.178,
+      "lat": -13.512,
+      "tmc2": {
+        "result": "MISSED",
+        "miss_reason": "exceeds_detector_radius_cap(500px)",
+        "gt_px": [
+          724.9,
+          4019.5
+        ],
+        "radius_px": 778.1
+      },
+      "ohrc": {
+        "result": "MISSED (structurally undetectable)",
+        "gt_full_image_px": [
+          9950.8,
+          31330.9
+        ],
+        "radius_px": 23850.0,
+        "reasons": [
+          "radius_exceeds_detector_cap(5000px)",
+          "radius_exceeds_frame_small_axis"
+        ]
+      }
+    },
+    {
+      "crater_id": "11-3-00076",
+      "diameter_km": 26.66,
+      "lon": 25.212,
+      "lat": -13.239,
+      "tmc2": {
+        "result": "MISSED",
+        "miss_reason": "exceeds_detector_radius_cap(500px)",
+        "gt_px": [
+          608.8,
+          2318.0
+        ],
+        "radius_px": 2174.6
+      },
+      "ohrc": {
+        "result": "MISSED (structurally undetectable)",
+        "gt_full_image_px": [
+          4822.5,
+          63493.1
+        ],
+        "radius_px": 66650.0,
+        "reasons": [
+          "radius_exceeds_detector_cap(5000px)",
+          "radius_exceeds_frame_small_axis"
+        ]
+      }
+    }
+  ]
+}

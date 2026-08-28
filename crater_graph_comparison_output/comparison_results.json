@@ -1,0 +1,127 @@
+{
+  "pair_id": "ch2_ohr_ncp_20231004T0406038822_d_img_d18__x__ch2_tmc_ncn_20250707T1853051045_d_img_d18",
+  "ground_truth_mode": "csv_refined_local_homography",
+  "tmc_crop_window": {
+    "cols": [
+      600,
+      2100
+    ],
+    "rows": [
+      86000,
+      92200
+    ]
+  },
+  "tolerance_px": 75.0,
+  "crater_detection_a": 816,
+  "crater_detection_b": 6779,
+  "sift": {
+    "keypoints_a/b": [
+      5261,
+      20001
+    ],
+    "raw_matches": 10522,
+    "ratio_test_matches": 0,
+    "ransac_inliers": 0,
+    "correct_vs_gt_inliers": {
+      "total_scored": 0,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {},
+      "mean_dx_expected_minus_predicted_px": 0.0,
+      "mean_dy_expected_minus_predicted_px": 0.0,
+      "systematic_bias_suspected": false
+    },
+    "correct_vs_gt_all": {
+      "total_scored": 0,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {},
+      "mean_dx_expected_minus_predicted_px": 0.0,
+      "mean_dy_expected_minus_predicted_px": 0.0,
+      "systematic_bias_suspected": false
+    },
+    "total_time_s": 1.201
+  },
+  "rift": {
+    "keypoints_a/b": [
+      10158,
+      15514
+    ],
+    "raw_matches": 20316,
+    "ratio_test_matches": 0,
+    "ransac_inliers": 0,
+    "correct_vs_gt_inliers": {
+      "total_scored": 0,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {},
+      "mean_dx_expected_minus_predicted_px": 0.0,
+      "mean_dy_expected_minus_predicted_px": 0.0,
+      "systematic_bias_suspected": false
+    },
+    "correct_vs_gt_all": {
+      "total_scored": 0,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {},
+      "mean_dx_expected_minus_predicted_px": 0.0,
+      "mean_dy_expected_minus_predicted_px": 0.0,
+      "systematic_bias_suspected": false
+    },
+    "total_time_s": 183.206
+  },
+  "crater_graph": {
+    "nodes_a/b": [
+      563,
+      5591
+    ],
+    "raw_matches": 113,
+    "consistency_matches": 0,
+    "ransac_inliers": 6,
+    "correct_vs_gt_inliers": {
+      "total_scored": 6,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {
+        "min": 470.50278070468784,
+        "max": 3129.8945746043087,
+        "mean": 1444.208479748575,
+        "median": 1104.9864061190362,
+        "p90": 2727.8301943635943
+      },
+      "mean_dx_expected_minus_predicted_px": 235.084,
+      "mean_dy_expected_minus_predicted_px": -897.189,
+      "systematic_bias_suspected": true
+    },
+    "correct_vs_gt_all": {
+      "total_scored": 113,
+      "correct_within_tolerance": 0,
+      "percent_correct": 0.0,
+      "tolerance_px": 75.0,
+      "error_distribution_px": {
+        "min": 114.36663687830618,
+        "max": 5483.143313502135,
+        "mean": 1796.0814641494258,
+        "median": 1527.1473947514667,
+        "p90": 3495.5384097855276
+      },
+      "mean_dx_expected_minus_predicted_px": -65.749,
+      "mean_dy_expected_minus_predicted_px": -124.426,
+      "systematic_bias_suspected": true
+    },
+    "total_time_s": 11.914,
+    "params": {
+      "k": 4,
+      "min_radius_m": 300.0,
+      "ratio_test": 0.6,
+      "min_similarity": 0.25,
+      "sigma": 0.5,
+      "ransac_reproj_thresh": 15.0
+    }
+  }
+}

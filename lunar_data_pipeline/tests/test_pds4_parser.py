@@ -31,6 +31,7 @@ NS_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
       <start_date_time>2026-01-03T06:09:04.137Z</start_date_time>
       <stop_date_time>2026-01-03T06:09:20.520Z</stop_date_time>
     </Time_Coordinates>
+    {sun_angles}
     {observing_system}
     <Mission_Area>
       <isda:Product_Parameters>
@@ -114,6 +115,7 @@ def write_label(
     refined: dict[str, tuple[float, float]] | None = None,
     system_level: dict[str, tuple[float, float]] | None = None,
     raw_xml: str | None = None,
+    sun_angles: str = "",
 ) -> Path:
     label_dir = tmp_path / stem
     label_dir.mkdir(parents=True, exist_ok=True)
@@ -130,6 +132,7 @@ def write_label(
         label_path.write_text(
             NS_TEMPLATE.format(
                 lid=lid,
+                sun_angles=sun_angles,
                 observing_system=observing_system,
                 corner_blocks="\n".join(blocks),
                 img_name=img_name or f"{stem}.img",
@@ -183,6 +186,34 @@ class TestParseLabel:
         assert product.footprint == pytest.approx(expected_order)
         assert product.file_path.exists()
         assert product.file_path.name.endswith(".img")
+
+    def test_parses_sun_geometry_from_label(self, tmp_path):
+        label = write_label(
+            tmp_path,
+            refined=REFINED,
+            sun_angles=(
+                '  <isda:sun_elevation unit="deg">9.488661</isda:sun_elevation>\n'
+                '  <isda:sun_azimuth unit="deg">272.874656</isda:sun_azimuth>\n'
+                '  <isda:solar_incidence unit="deg">80.511339</isda:solar_incidence>'
+            ),
+        )
+
+        product = parse_label(label)
+
+        assert product is not None
+        assert product.sun_elevation_deg == pytest.approx(9.488661)
+        assert product.sun_azimuth_deg == pytest.approx(272.874656)
+        assert product.solar_incidence_deg == pytest.approx(80.511339)
+
+    def test_sun_geometry_defaults_to_none(self, tmp_path):
+        label = write_label(tmp_path, refined=REFINED, sun_angles="")
+
+        product = parse_label(label)
+
+        assert product is not None
+        assert product.sun_elevation_deg is None
+        assert product.sun_azimuth_deg is None
+        assert product.solar_incidence_deg is None
 
     def test_prefers_refined_over_system_corners(self, tmp_path):
         label = write_label(
@@ -243,6 +274,7 @@ class TestParseLabel:
     def test_missing_dimensions_return_none(self, tmp_path):
         raw = NS_TEMPLATE.replace("<elements>101074</elements>", "").format(
             lid="x",
+            sun_angles="",
             observing_system=OBSERVING_SYSTEM_OHRC,
             corner_blocks=corners_xml("System_Level_Coordinates", SYSTEM_LEVEL),
             img_name="x.img",

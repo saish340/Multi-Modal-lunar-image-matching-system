@@ -80,6 +80,11 @@ class LunarProduct:
     phase_angle_deg: float | None = None
     imaging_orbit_number: int | None = None
     dumping_orbit_number: int | None = None
+    # Sun-geometry fields parsed from the PDS4 label body (real, per-product
+    # values -- present in the *label*, unlike the zero-filled catalog angles).
+    sun_elevation_deg: float | None = None
+    sun_azimuth_deg: float | None = None
+    solar_incidence_deg: float | None = None
 
 
 def _local(tag: str) -> str:
@@ -306,6 +311,14 @@ def parse_label(label_path: str | Path) -> LunarProduct | None:
     product_params = _first(root, "Product_Parameters")
     lid_el = _first(root, "logical_identifier")
 
+    def _node_float(name: str) -> float | None:
+        el = _first(root, name)
+        return _parse_float(el.text) if el is not None else None
+
+    sun_elevation = _node_float("sun_elevation")
+    sun_azimuth = _node_float("sun_azimuth")
+    solar_incidence = _node_float("solar_incidence")
+
     product = LunarProduct(
         instrument=instrument,
         file_path=image_path,
@@ -328,6 +341,9 @@ def parse_label(label_path: str | Path) -> LunarProduct | None:
         start_time=(_child_text(root, "start_date_time")),
         stop_time=(_child_text(root, "stop_date_time")),
         geometry_csv_path=find_geometry_csv(label_path),
+        sun_elevation_deg=sun_elevation,
+        sun_azimuth_deg=sun_azimuth,
+        solar_incidence_deg=solar_incidence,
     )
 
     if product.file_path.exists():
