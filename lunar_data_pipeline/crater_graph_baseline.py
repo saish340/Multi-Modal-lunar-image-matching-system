@@ -72,17 +72,32 @@ class CraterGraphMatchResult:
     graph_b: CraterGraph | None = None
 
 
-def _scale_matrix(factor: float) -> np.ndarray:
-    return np.array([[factor, 0.0, 0.0], [0.0, factor, 0.0], [0.0, 0.0, 1.0]])
+def _scale_matrix(fx: float, fy: float | None = None) -> np.ndarray:
+    if fy is None:
+        fy = fx
+    return np.array(
+        [[fx, 0.0, 0.0], [0.0, fy, 0.0], [0.0, 0.0, 1.0]]
+    )
 
 
 def compose_original_homography(
     homography_adjusted: np.ndarray,
     factor_a: float,
     factor_b: float,
+    factor_a_y: float | None = None,
+    factor_b_y: float | None = None,
 ) -> np.ndarray:
-    """Compose adj-A -> adj-B homography into orig-A -> orig-B pixels."""
-    return _scale_matrix(factor_b) @ homography_adjusted @ _scale_matrix(1.0 / factor_a)
+    """Compose adj-A -> adj-B homography into orig-A -> orig-B pixels.
+
+    Factor components follow :func:`ScaledImage.to_original`:
+    ``orig = S_b @ adj @ S_a^-1`` where the scale matrices may be anisotropic
+    (per-axis factors) when the downsampled images are not square.
+    """
+    if factor_a_y is None:
+        factor_a_y = factor_a
+    if factor_b_y is None:
+        factor_b_y = factor_b
+    return _scale_matrix(factor_b, factor_b_y) @ homography_adjusted @ _scale_matrix(1.0 / factor_a, 1.0 / factor_a_y)
 
 
 def run_crater_graph_matching(
@@ -93,6 +108,7 @@ def run_crater_graph_matching(
     meters_per_px_b: float,
     ohrc_downsample_factor: float,
     tmc_crop_offset: tuple[float, float],
+    ohrc_downsample_factor_y: float | None = None,
     k: int = 4,
     min_radius_m: float = 0.0,
     ratio_test: float = 0.6,
@@ -203,7 +219,9 @@ def run_crater_graph_matching(
     result.inlier_count = int(inlier_mask.sum())
     result.homography_adjusted = homography_adj
     result.homography_original = compose_original_homography(
-        homography_adj, ohrc_downsample_factor, 1.0
+        homography_adj, ohrc_downsample_factor, 1.0,
+        ohrc_downsample_factor_y if ohrc_downsample_factor_y is not None else ohrc_downsample_factor,
+        1.0,
     )
     logger.info(
         "RANSAC (thresh %.1f px adj): %d/%d inliers (%.1f%%)",
@@ -214,7 +232,9 @@ def run_crater_graph_matching(
     # Map to original-resolution pixel coordinates (aligned by index).
     src_flat = src_adj.reshape(-1, 2)
     dst_flat = dst_adj.reshape(-1, 2)
-    result.points_a_original = src_flat * ohrc_downsample_factor
+    if ohrc_downsample_factor_y is None:
+        ohrc_downsample_factor_y = ohrc_downsample_factor
+    result.points_a_original = src_flat * np.array([ohrc_downsample_factor, ohrc_downsample_factor_y])
     px0, sy0 = tmc_crop_offset
     result.points_b_original = dst_flat + np.array([px0, sy0])
     result.inlier_indices = np.flatnonzero(inlier_mask)

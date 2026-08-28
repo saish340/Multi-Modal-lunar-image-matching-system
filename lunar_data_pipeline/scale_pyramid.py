@@ -31,20 +31,31 @@ class ScaledImage:
     """An image after resolution adjustment, remembering how to get back."""
 
     image: np.ndarray  # uint8, possibly downsampled
-    downsample_factor: float  # >= 1; original px = adjusted px * factor
+    downsample_factor: float  # >= 1; original px = adjusted px * factor (x/samples axis)
     original_lines: int
     original_samples: int
     source_resolution_m: float
     target_resolution_m: float
+    downsample_factor_y: float = 1.0  # y/lines-axis factor (may differ from x)
 
     def to_original(self, points: np.ndarray) -> np.ndarray:
-        """Map adjusted-space (x, y) points back to original-resolution pixels."""
+        """Map adjusted-space (x, y) points back to original-resolution pixels.
+
+        Uses the per-axis factor: x is scaled by ``downsample_factor`` and y by
+        ``downsample_factor_y``, which can differ when the source image is not
+        square (independent rounding of samples vs lines during resize).
+        """
         pts = np.atleast_2d(np.asarray(points, dtype=float))
-        return pts * self.downsample_factor
+        out = pts.copy()
+        out[:, 0] *= self.downsample_factor
+        out[:, 1] *= self.downsample_factor_y
+        return out if points.ndim == 2 else out[0]
 
     def __post_init__(self) -> None:
         if self.downsample_factor < 1.0:
             raise ValueError("downsample_factor must be >= 1 (never upsample)")
+        if self.downsample_factor_y < 1.0:
+            raise ValueError("downsample_factor_y must be >= 1 (never upsample)")
 
 
 def compute_downsample_factor(
@@ -93,6 +104,7 @@ def downsample_to_match(
             original_samples=samples,
             source_resolution_m=source_resolution_m,
             target_resolution_m=target_resolution_m,
+            downsample_factor_y=1.0,
         )
 
     new_samples = max(int(round(samples / factor)), 1)
@@ -116,4 +128,5 @@ def downsample_to_match(
         original_samples=samples,
         source_resolution_m=source_resolution_m,
         target_resolution_m=target_resolution_m,
+        downsample_factor_y=lines / new_lines,  # may differ from x due to rounding
     )

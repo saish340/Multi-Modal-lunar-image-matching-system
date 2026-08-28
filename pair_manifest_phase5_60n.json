@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "data_root": "D:\\Multi-Modal-lunar-image-matching-system",
+  "counts": {
+    "OHRC": 1,
+    "TMC2": 1,
+    "IIRS": 0,
+    "pairs": 1
+  },
+  "products": {},
+  "pairs": [
+    {
+      "pair_id": "ch2_ohr_ncp_20250516T1342347288_d_img_d18__x__ch2_tmc_nca_20200607T2239162106_d_img_d18",
+      "ohrc": {
+        "product_id": "ch2_ohr_ncp_20250516T1342347288_d_img_d18",
+        "label_path": "C:/Users/SAISH MALVANKAR/Downloads/ch2_ohr_ncp_20250516T1342347288_d_img_d18/data/calibrated/20250516/ch2_ohr_ncp_20250516T1342347288_d_img_d18.xml",
+        "image_path": "C:\\Users\\SAISH MALVANKAR\\Downloads\\ch2_ohr_ncp_20250516T1342347288_d_img_d18\\data\\calibrated\\20250516\\ch2_ohr_ncp_20250516T1342347288_d_img_d18.img",
+        "geometry_csv_path": "C:\\Users\\SAISH MALVANKAR\\Downloads\\ch2_ohr_ncp_20250516T1342347288_d_img_d18\\geometry\\calibrated\\20250516\\ch2_ohr_ncp_20250516T1342347288_g_grd_d18.csv",
+        "lines": 90148,
+        "samples": 12000
+      },
+      "tmc2": {
+        "product_id": "ch2_tmc_nca_20200607T2239162106_d_img_d18",
+        "label_path": "C:/Users/SAISH MALVANKAR/Downloads/ch2_tmc_nca_20200607T2239162106_d_img_d18/data/calibrated/20200607/ch2_tmc_nca_20200607T2239162106_d_img_d18.xml",
+        "image_path": "C:\\Users\\SAISH MALVANKAR\\Downloads\\ch2_tmc_nca_20200607T2239162106_d_img_d18\\data\\calibrated\\20200607\\ch2_tmc_nca_20200607T2239162106_d_img_d18.img",
+        "geometry_csv_path": "C:\\Users\\SAISH MALVANKAR\\Downloads\\ch2_tmc_nca_20200607T2239162106_d_img_d18\\geometry\\calibrated\\20200607\\ch2_tmc_nca_20200607T2239162106_g_grd_d18.csv",
+        "lines": 196548,
+        "samples": 4000
+      },
+      "ground_truth": {
+        "method": "corner_homography",
+        "pixel_convention": "(x=sample, y=line), zero-based, UL=(0,0)",
+        "geo_convention": "(lon, lat) selenographic degrees",
+        "product_a_id": "ch2_ohr_ncp_20250516T1342347288_d_img_d18",
+        "product_b_id": "ch2_tmc_nca_20200607T2239162106_d_img_d18",
+        "h_pixel_to_geo_a": [
+          [
+            1.7591858708905013e-05,
+            0.00010396728418703022,
+            355.40922199999994
+          ],
+          [
+            -7.732250741936893e-07,
+            8.543330429828088e-06,
+            60.851917
+          ],
+          [
+            -2.3695315692843378e-09,
+            2.956944111751456e-07,
+            1.0
+          ]
+        ],
+        "h_geo_to_pixel_b": [
+          [
+            14881.425835010554,
+            289.9726464980046,
+            -5284694.979177904
+          ],
+          [
+            138.73877243631847,
+            -21587.044286448992,
+            1315749.138924457
+          ],
+          [
+            -0.0010479333157369173,
+            0.0933393567301958,
+            1.0
+          ]
+        ]
+      }
+    }
+  ]
+}

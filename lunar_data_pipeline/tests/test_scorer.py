@@ -138,8 +138,30 @@ class TestScalePyramidMapping:
         assert scaled.downsample_factor == pytest.approx(101 / 10)
 
         pts = scaled.to_original(np.array([[5.0, 2.5], [0.0, 0.0]]))
-        assert pts[0] == pytest.approx((5 * 101 / 10, 2.5 * 101 / 10))
+        # x is scaled by the samples-factor; y by the (independent) lines-factor.
+        assert pts[0] == pytest.approx((5 * 101 / 10, 2.5 * 51 / 5))
         assert pts[1][0] == 0.0
+
+    def test_per_axis_factor_when_non_square(self):
+        # Non-square OHRC-style image: downsampled lines and samples round to
+        # different factors, so y must use its own factor, not the x factor.
+        img = np.zeros((101074, 12000), np.uint8)  # matches real OHRC dims
+        scaled = downsample_to_match(img, source_resolution_m=0.2,
+                                     target_resolution_m=6.13)
+        fx = scaled.downsample_factor
+        fy = scaled.downsample_factor_y
+        assert fx != fy
+        assert fx == pytest.approx(12000 / scaled.image.shape[1])
+        assert fy == pytest.approx(101074 / scaled.image.shape[0])
+
+        p = scaled.to_original(np.array([[100.0, 200.0]]))
+        assert p[0, 0] == pytest.approx(100.0 * fx)
+        assert p[0, 1] == pytest.approx(200.0 * fy)
+        # single-point (2,) input maps back to a single point
+        q = scaled.to_original(np.array([100.0, 200.0]))
+        assert q.shape == (2,)
+        assert q[0] == pytest.approx(100.0 * fx)
+        assert q[1] == pytest.approx(200.0 * fy)
 
     def test_scaledimage_never_upsamples(self):
         with pytest.raises(ValueError):

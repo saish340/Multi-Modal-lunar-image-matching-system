@@ -300,6 +300,7 @@ def main(argv: list[str] | None = None) -> int:
         min_mutual_fraction=args.graph_min_mutual_fraction,
         neighbor_physical=args.graph_neighbor_physical,
         neighbor_use_ratio_test=not args.graph_no_ratio_test,
+        ohrc_downsample_factor_y=ohrc_scaled.downsample_factor_y,
     )
     t_graph = time.time() - t0
 
