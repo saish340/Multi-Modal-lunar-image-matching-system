@@ -1,0 +1,78 @@
+{
+  "pair": [
+    "ch2_ohr_ncp_20231004T0406038822_d_img_d18",
+    "ch2_tmc_ncn_20250707T1853051045_d_img_d18"
+  ],
+  "region": "square",
+  "resolution_ratio_x": 30.65,
+  "ohrc_region_px": {
+    "cols": [
+      400,
+      11800
+    ],
+    "rows": [
+      45000,
+      56400
+    ]
+  },
+  "a_display": [
+    372,
+    372
+  ],
+  "b_tmc_region_px": {
+    "cols": [
+      1000,
+      1600
+    ],
+    "rows": [
+      88700,
+      89500
+    ]
+  },
+  "flip_b": true,
+  "recovered": {
+    "sx": 0.30594,
+    "sy": 0.4472,
+    "theta_deg": 20.511,
+    "tx": 23.0,
+    "ty": 117.0,
+    "psr": 12.58,
+    "peak_score": 0.0337,
+    "translation_psr": 12.58,
+    "n_eval": 2487,
+    "runtime_s": 131.09,
+    "coarse_count": 343,
+    "fine_count": 2144,
+    "H_apply": [
+      [
+        0.28654268984537845,
+        0.15669270026726176,
+        23.0
+      ],
+      [
+        -0.10719627233456035,
+        0.41884989875008216,
+        117.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "gt_scoring": {
+    "n_points": 300,
+    "within_100px": 131,
+    "within_300px": 300,
+    "error_px": {
+      "min": 7.194481118145676,
+      "median": 111.29993777706778,
+      "mean": 110.81006458015169,
+      "max": 200.84202342965256
+    }
+  },
+  "expected_true_transform": {
+    "note": "geolocation-derived residual affine for the equal-res region has NEGATIVE determinant (the raw per-pixel geolocation CSVs give OHRC dlat/dscan>0 but TMC-2 dlat/dscan<0: opposite along-track latitude ordering, confirmed independently by the PDS4 corner footprints). The positive-scale R(theta) diag(sx,sy) model cannot represent a reflection, so a scan-axis flip of one image is required. Additionally the shared geolocation grid is sampled every 100 px, so affine-residual scoring is lower-bounded at ~ 40 px display space by grid quantization, not by true distortion."
+  }
+}

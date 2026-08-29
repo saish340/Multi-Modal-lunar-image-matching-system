@@ -92,3 +92,46 @@ class TestFitLocalTransforms:
         with pytest.raises(ValueError):
             fit_local_transforms(grid, (0, 3), (0, 3), min_points=50)
 
+
+class TestDeterminantOriginComposition:
+    """Phase 8 finding: a negative-determinant composed pixel->pixel map traces
+    to OPPOSITE axis orientation in the two products' RAW geolocation data, not
+    to the composition step itself. Flipping one product's scan axis before
+    composing changes the composed det sign. This synthetic regression pins the
+    convention; the real OHRC/TMC-2 pair exhibits exactly this (see
+    phase8_findings.md)."""
+
+    def _compose_det(self, scan_flip_b: bool) -> float:
+        # Product A: geo maps (pix, scan) -> (lon, lat), dlat/dscan > 0.
+        # Product B: geo maps (lon, lat) -> (pix', scan'), dlat/dscan < 0
+        # unless scan_flip_b (helix removes a physical mirror).
+        rng = np.random.default_rng(0)
+        pix = rng.uniform(0, 100, 200)
+        scan = rng.uniform(0, 100, 200)
+        lon = 20 + 0.01 * pix + 0.001 * scan
+        lat = -10 + 0.01 * scan  # dlat/dscan = + (product A)
+        p = np.c_[pix, scan]
+        q = np.c_[lon, lat]
+        X = np.c_[p, np.ones(len(p))]
+        La, *_ = np.linalg.lstsq(X, q, rcond=None)
+        La = La[:2, :2].T
+
+        pixb = rng.uniform(0, 100, 200)
+        scanb = rng.uniform(0, 100, 200)
+        lonb = 20 + 0.01 * pixb - 0.002 * scanb
+        latb = -10 - 0.02 * scanb  # dlat/dscan = - (product B)
+        pb = np.c_[pixb, scanb]
+        qb = np.c_[lonb, latb]
+        Xb = np.c_[qb, np.ones(len(qb))]
+        Lb, *_ = np.linalg.lstsq(Xb, pb, rcond=None)
+        Lb = Lb[:2, :2].T
+        if scan_flip_b:
+            Lb = np.diag([1.0, -1.0]) @ Lb
+        return float(np.linalg.det(Lb @ La))
+
+    def test_unflipped_composition_is_negative_and_flip_makes_positive(self):
+        det_nf = self._compose_det(False)
+        det_f = self._compose_det(True)
+        assert det_nf < 0
+        assert det_f > 0
+
