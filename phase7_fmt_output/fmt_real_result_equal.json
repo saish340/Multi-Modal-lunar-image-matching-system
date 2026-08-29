@@ -1,0 +1,74 @@
+{
+  "pair": [
+    "ch2_ohr_ncp_20231004T0406038822_d_img_d18",
+    "ch2_tmc_ncn_20250707T1853051045_d_img_d18"
+  ],
+  "mode": "equal_res",
+  "square_region": false,
+  "resolution_ratio_x": 30.65,
+  "ohrc_region_px": {
+    "cols": [
+      400,
+      11800
+    ],
+    "rows": [
+      45000,
+      69000
+    ]
+  },
+  "a_display": [
+    372,
+    783
+  ],
+  "b_tmc_region_px": {
+    "cols": [
+      1000,
+      1700
+    ],
+    "rows": [
+      88000,
+      89500
+    ]
+  },
+  "fmt_recovered": {
+    "scale": 1.0,
+    "theta_deg": 45.7031,
+    "tx": -0.0,
+    "ty": 387.0,
+    "log_polar_shift_cols": 65.0,
+    "log_polar_shift_rows": 0.0,
+    "log_polar_psr": 14.83,
+    "translation_psr": 4.77,
+    "H_apply": [
+      [
+        0.6983762494089728,
+        0.7157308252838187,
+        -223.89954695133758
+      ],
+      [
+        -0.7157308252838187,
+        0.6983762494089728,
+        637.7029545712401
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "gt_scoring": {
+    "n_points": 200,
+    "within_100px": 0,
+    "within_300px": 43,
+    "error_px": {
+      "min": 100.00834381356152,
+      "median": 516.2417692924728,
+      "mean": 535.1519659746795,
+      "max": 984.8754124134422
+    }
+  },
+  "expected_true_transform": {
+    "note": "geolocation-derived affine: rotation~2.9 deg, anisotropic scale x~1.12 y~1.62 -> no global isotropic s*R exists"
+  }
+}
