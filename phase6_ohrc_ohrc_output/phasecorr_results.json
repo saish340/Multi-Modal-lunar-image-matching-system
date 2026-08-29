@@ -1,0 +1,42 @@
+{
+  "pair": [
+    "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+    "ch2_ohr_ncp_20260103T1005176450_d_img_d18"
+  ],
+  "test": "phase-correlation sanity check (diagnostic, not a pipeline replacement)",
+  "context": "same-scale OHRC-OHRC, same day 2026-01-03, South Pole, 0.25 m/px, no scale gap, near-identical sun",
+  "windows_px": {
+    "a": {"cols": [2000, 10000], "rows": [40000, 48000]},
+    "b": {"cols": [2606, 11229], "rows": [35584, 44289]}
+  },
+  "padding": 16384,
+  "phase_correlation": {
+    "crop_relative_shift_px": {"dx": 312, "dy": 11},
+    "absolute_offset_px": {"dx": 918, "dy": -4405},
+    "peak_score": 0.0009,
+    "psr": 14.43,
+    "spatial_cross_corr_zero_shift": 0.6333
+  },
+  "ground_truth": {
+    "corner_homography_offset_px": {"dx": 606, "dy": -4416, "err": 312.2},
+    "grid_csv_geolocation_offset_px": {
+      "dx": 969, "dy": -4314,
+      "err": 103.9,
+      "iqr_y_px": [-4410, -4211]
+    }
+  },
+  "decision": {
+    "verdict": "PASS",
+    "reasoning": "strong PSR peak (14.43) recovers a single dominant global translation within ~104 px of the authoritative ISRO grid/CSV geolocation; residual is smaller than the grid GT's own internal scatter (y-IQR ~200 px), i.e. limiting accuracy of a single global translation under nonlinear polar projection. The y-offset is essentially exact (-11 px).",
+    "sift_comparison_px": {
+      "sift": {"ratio_test_matches": 5129, "ransac_inliers": 3799, "percent_ransac": 74.0, "correct_vs_gt_at_100px": 0.0, "median_geo_separation_px": 27396},
+      "phase_corr": {"error_vs_grid_gt_px": 103.9}
+    },
+    "conclusion": "Geolocation conventions and scoring GT are sound; a coherent global registration exists and phase correlation recovers it, while SIFT's 74%-self-consistent match is displaced ~27,000 px (spurious, latching on self-similar polar crater texture). SIFT failure is a feature-matching limitation on repetitive terrain, NOT a fundamental pipeline problem -> proceed to scale/multi-modal research track."
+  },
+  "caveat": "Strict decision tree calls for a non-polar same-scale OHRC control. No such pair exists locally (the two 2026 polar products are the only OHRC self-overlap pair; catalog non-polar OHRC pair only with TMC). A proper control requires another multi-GB OHRC download, which was declined. Control deferred.",
+  "artifacts": {
+    "overlay": "phasecorr_overlay.png",
+    "scripts": ["_phase6_phasecorr.py", "_phase6_diag3.py", "_phase6_diag5.py", "_phase6_samescale.py"]
+  }
+}

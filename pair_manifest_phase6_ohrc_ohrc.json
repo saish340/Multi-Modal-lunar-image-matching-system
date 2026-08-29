@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "data_root": "D:\\Multi-Modal-lunar-image-matching-system",
+  "counts": {
+    "OHRC": 2,
+    "TMC2": 0,
+    "IIRS": 0,
+    "pairs": 1
+  },
+  "products": {},
+  "pairs": [
+    {
+      "pair_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18__x__ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+      "ohrc": {
+        "product_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+        "label_path": "D:/Multi-Modal-lunar-image-matching-system/ch2_ohr_ncp_20260103T0609041371_d_img_d18/data/calibrated/20260103/ch2_ohr_ncp_20260103T0609041371_d_img_d18.xml",
+        "image_path": "D:\\Multi-Modal-lunar-image-matching-system\\ch2_ohr_ncp_20260103T0609041371_d_img_d18\\data\\calibrated\\20260103\\ch2_ohr_ncp_20260103T0609041371_d_img_d18.img",
+        "geometry_csv_path": "D:\\Multi-Modal-lunar-image-matching-system\\ch2_ohr_ncp_20260103T0609041371_d_img_d18\\geometry\\calibrated\\20260103\\ch2_ohr_ncp_20260103T0609041371_g_grd_d18.csv",
+        "lines": 101074,
+        "samples": 12000
+      },
+      "tmc2": {
+        "product_id": "ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+        "label_path": "D:/Multi-Modal-lunar-image-matching-system/ch2_ohr_ncp_20260103T1005176450_d_img_d18/data/calibrated/20260103/ch2_ohr_ncp_20260103T1005176450_d_img_d18.xml",
+        "image_path": "D:\\Multi-Modal-lunar-image-matching-system\\ch2_ohr_ncp_20260103T1005176450_d_img_d18\\data\\calibrated\\20260103\\ch2_ohr_ncp_20260103T1005176450_d_img_d18.img",
+        "geometry_csv_path": "D:\\Multi-Modal-lunar-image-matching-system\\ch2_ohr_ncp_20260103T1005176450_d_img_d18\\geometry\\calibrated\\20260103\\ch2_ohr_ncp_20260103T1005176450_g_grd_d18.csv",
+        "lines": 101075,
+        "samples": 12000
+      },
+      "ground_truth": {
+        "method": "corner_homography",
+        "pixel_convention": "(x=sample, y=line), zero-based, UL=(0,0)",
+        "geo_convention": "(lon, lat) selenographic degrees",
+        "product_a_id": "ch2_ohr_ncp_20260103T0609041371_d_img_d18",
+        "product_b_id": "ch2_ohr_ncp_20260103T1005176450_d_img_d18",
+        "h_pixel_to_geo_a": [
+          [
+            -9.856716575294176e-05,
+            -2.8651817711703546e-06,
+            27.723846
+          ],
+          [
+            4.66861215423861e-06,
+            -0.00011091595525145631,
+            -85.32353400000001
+          ],
+          [
+            -9.594774649336526e-08,
+            1.4020277331482714e-06,
+            1.0
+          ]
+        ],
+        "h_geo_to_pixel_b": [
+          [
+            841.9490540369353,
+            4406.514903715484,
+            352417.8733304533
+          ],
+          [
+            383.3154963426227,
+            -9275.189335276578,
+            -801616.4904127559
+          ],
+          [
+            -0.0004039929172753837,
+            0.012716966160053376,
+            1.0
+          ]
+        ]
+      }
+    }
+  ]
+}
