@@ -23,6 +23,8 @@ import pytest
 from lunar_data_pipeline.anisotropic_affine_search import (
     _assemble_affine,
     _linear_matrix,
+    refine,
+    refine_transform,
     resample_for_search,
     search,
     warp_content,
@@ -122,3 +124,74 @@ def test_determinant_sign_distinguishes_positive_scale_from_mirror():
     for sx in (0.7, 1.0, 1.6):
         for sy in (0.7, 1.0, 1.6):
             assert np.linalg.det(_linear_matrix(sx, sy, 20.0)) > 0
+
+
+def _proj_rms(pts, H_true, H_rec):
+    n = len(pts)
+    t = (H_true @ np.column_stack([pts, np.ones(n)]).T)
+    t = (t / t[2])[:2].T
+    r = (H_rec @ np.column_stack([pts, np.ones(n)]).T)
+    r = (r / r[2])[:2].T
+    return float(np.sqrt(np.mean(np.sum((r - t) ** 2, axis=1))))
+
+
+def _refit_t(a, b, sx, sy, th):
+    """Final translation-only PC pass at fixed (sx, sy, theta)."""
+    from lunar_data_pipeline.phase_correlation import hann2d, phase_correlate
+
+    ws = warp_content(a, sx, sy, th, 0.0, 0.0)
+    win = hann2d(ws.shape)
+    dx, dy, _, _ = phase_correlate(ws * win, b * win)
+    return float(-dx), float(-dy)
+
+
+@pytest.mark.skipif(not _HAVE_REAL, reason="real OHRC product not present")
+def test_refine_improves_on_deliberately_coarse_start():
+    """Phase 10: from a deliberately-coarse (perturbed) estimate, the
+    continuous PSR refine must cut the GT projection RMS substantially
+    compared with the start, and the assembled H must be closer to the known
+    injected transform (the synthetic-refinement gate criterion)."""
+    a = real_crop(384)
+    sx, sy, th, tx, ty = 1.3, 0.8, 10.0, 15.0, -12.0
+    b = warp_content(a, sx, sy, th, tx, ty)
+    c = ((384 - 1) / 2.0, (384 - 1) / 2.0)
+    rng = np.random.default_rng(0)
+    pts = rng.uniform([10, 10], [384 - 10, 384 - 10], (40, 2))
+    H_true = _assemble_affine(sx, sy, th, tx, ty, c)
+
+    # deliberately-off coarse node
+    st_sx, st_sy, st_th = 1.32, 0.83, 8.5
+    H_start = _assemble_affine(st_sx, st_sy, st_th, tx, ty, c)
+    start_rms = _proj_rms(pts, H_true, H_start)
+
+    rsx, rsy, rth, psr, nf = refine(a, b, st_sx, st_sy, st_th)
+    rtx, rty = _refit_t(a, b, rsx, rsy, rth)
+    H_rec = _assemble_affine(rsx, rsy, rth, rtx, rty, c)
+    refined_rms = _proj_rms(pts, H_true, H_rec)
+
+    assert nf > 0
+    assert refined_rms < 0.4 * start_rms, \
+        f"refine RMS {refined_rms:.2f} not < 40% of start {start_rms:.2f}"
+    # refinement must also land closer in parameter space than the start
+    def pdist(x, y):
+        return abs(x - y)
+    assert pdist(rsx, sx) <= pdist(st_sx, sx) + 1e-9
+
+
+def test_refine_alias_is_refine_transform():
+    assert refine is refine_transform
+
+
+def test_search_refine_flag_counts():
+    """refine=False must leave the coarse baseline untouched (n_refine==0);
+    the default refine=True adds local-optimizer evaluations."""
+    rng = np.random.default_rng(0)
+    a = rng.standard_normal((64, 64)).astype(np.float32)
+    b = warp_content(a, 1.1, 0.9, 5.0, 3.0, -2.0)
+    coarse = search(a, b, refine=False)
+    refined = search(a, b, refine=True)
+    assert coarse.n_refine == 0
+    assert refined.n_refine > 0
+    # refinement may not move arbitrarily far from the coarse answer
+    assert abs(refined.sx - coarse.sx) <= 0.2
+    assert abs(refined.sy - coarse.sy) <= 0.2

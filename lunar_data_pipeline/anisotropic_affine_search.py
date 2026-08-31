@@ -34,7 +34,7 @@ from __future__ import annotations
 import logging
 import math
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import product
 from typing import Optional, Tuple
 
@@ -155,7 +155,8 @@ class AnisotropicAffineResult:
     runtime_s: float
     coarse_count: int
     fine_count: int
-    H_apply: np.ndarray  # 3x3 affine, maps A-space -> B-space
+    n_refine: int = 0
+    H_apply: np.ndarray = field(default_factory=lambda: np.eye(3))  # 3x3 affine, maps A-space -> B-space
 
     def project(self, point: np.ndarray) -> np.ndarray:
         pts = np.atleast_2d(np.asarray(point, dtype=float))
@@ -180,6 +181,7 @@ class AnisotropicAffineResult:
             "runtime_s": round(float(self.runtime_s), 2),
             "coarse_count": self.coarse_count,
             "fine_count": self.fine_count,
+            "n_refine": self.n_refine,
             "H_apply": [[float(v) for v in row] for row in self.H_apply],
         }
 
@@ -208,6 +210,105 @@ def grid_values(start: float, stop: float, n: int) -> np.ndarray:
     return np.linspace(start, stop, n)
 
 
+def refine_transform(
+    image_a: np.ndarray,
+    image_b: np.ndarray,
+    sx: float,
+    sy: float,
+    theta_deg: float,
+    *,
+    window: bool = True,
+    sx_bounds_frac: float = 0.15,
+    sy_bounds_frac: float = 0.15,
+    theta_bounds_deg: float = 8.0,
+    xatol_scale: float = 3e-4,
+    xatol_theta_deg: float = 5e-3,
+    maxiter: int = 250,
+    maxfev: int = 600,
+) -> tuple[float, float, float, float, int]:
+    """Continuous local refinement of ``(sx, sy, theta)`` by maximizing the
+    phase-correlation PSR (Phase 10).
+
+    The coarse grid search is quantized: its best ``(sx, sy, theta)`` can only
+    land on a grid node, and on real data the PSR is a continuous (but noisy)
+    function of these parameters, so a slightly-off grid node can sit well away
+    from the true PSR peak in parameter space. ``refine`` treats ``sx``/``sy``
+    in log-space and ``theta`` in degrees and runs scipy's derivative-free
+    Nelder-Mead simplex to continuously localise the PSR maximum, starting from
+    the coarse result. Nelder-Mead is chosen over a finer grid or a gradient
+    method because (a) a finer grid stays quantized to its step size, while a
+    simplex moves continuously, and (b) PSR is non-smooth/noisy on real data,
+    so derivative-free simplex is far more robust than gradient descent.
+
+    Returns ``(best_sx, best_sy, best_theta_deg, best_psr, n_evaluations)``.
+    The caller then performs the final translation-only phase-correlation pass.
+    """
+    # pylint: disable=import-outside-toplevel
+    from scipy.optimize import minimize
+
+    a = np.asarray(image_a, dtype=np.float32)
+    b = np.asarray(image_b, dtype=np.float32)
+
+    def objective(params: np.ndarray) -> float:
+        lnsx, lnsy, th = float(params[0]), float(params[1]), float(params[2])
+        out_sx = math.exp(lnsx)
+        out_sy = math.exp(lnsy)
+        if not (out_sx > 0 and out_sy > 0):
+            return 1e9
+        ws = resample_for_search(a, out_sx, out_sy, th)
+        if window:
+            win = hann2d(ws.shape)
+            ws = ws * win
+            b_ = b * win
+        else:
+            b_ = b
+        _, _, _, psr = phase_correlate(ws, b_)
+        # translate PSR into a finite positive cost; -PSR is minimised.
+        return float(-psr)
+
+    y0 = np.array([math.log(sx), math.log(sy), theta_deg], dtype=float)
+    lo = np.array([
+        math.log(sx * (1.0 - sx_bounds_frac)),
+        math.log(sy * (1.0 - sy_bounds_frac)),
+        theta_deg - theta_bounds_deg,
+    ])
+    hi = np.array([
+        math.log(sx * (1.0 + sx_bounds_frac)),
+        math.log(sy * (1.0 + sy_bounds_frac)),
+        theta_deg + theta_bounds_deg,
+    ])
+
+    res = minimize(
+        objective,
+        y0,
+        method="Nelder-Mead",
+        bounds=list(zip(lo, hi)),
+        options={
+            "xatol": xatol_scale,
+            "fatol": 1e-6,
+            "maxiter": maxiter,
+            "maxfev": maxfev,
+            "adaptive": True,
+        },
+    )
+
+    best_lnsx, best_lnsy, best_th = res.x
+    best_sx = float(math.exp(best_lnsx))
+    best_sy = float(math.exp(best_lnsy))
+    # recompute the objective at the optimum for a clean PSR (Nelder-Mead's
+    # fun is the last simplex value which can be slightly stale).
+    best_psr = float(-objective(np.array([best_lnsx, best_lnsy, best_th])))
+    # theta: keep within the declared theta range conventions (wrap already
+    # handled by optimizer within bounds).
+    return best_sx, best_sy, float(best_th), best_psr, int(res.nfev)
+
+
+#: Public alias (kept for external callers/tests). ``search`` uses the
+#: underlying ``refine_transform`` name so its ``refine: bool`` parameter does
+#: not shadow the function within the same module scope.
+refine = refine_transform
+
+
 def search(
     image_a: np.ndarray,
     image_b: np.ndarray,
@@ -229,6 +330,10 @@ def search(
     polish_fraction_sy: float = 0.25,
     polish_theta_deg: float = 0.05,
     window: bool = True,
+    refine: bool = True,
+    refine_sx_frac: float = 0.15,
+    refine_sy_frac: float = 0.15,
+    refine_theta_deg: float = 8.0,
 ) -> AnisotropicAffineResult:
     """Coarse-to-fine grid search over ``(sx, sy, theta)`` scored by PSR.
 
@@ -237,6 +342,13 @@ def search(
     see the runners). The geolocation data must NOT be used to seed the ranges
     -- a broad range is the default so the method generalises to pairs where the
     answer is not known in advance.
+
+    When ``refine`` is true (default), the grid/polish result is passed as the
+    initial guess to :func:`refine`, a continuous Nelder-Mead PSR maximiser that
+    closes the coarse-grid precision gap (Phase 10), then a final translation-
+    only phase-correlation pass recovers the residual translation. Set
+    ``refine=False`` to keep the original coarse search exactly as a
+    fallback/comparison baseline.
     """
     a = np.asarray(image_a, dtype=np.float32)
     b = np.asarray(image_b, dtype=np.float32)
@@ -301,6 +413,21 @@ def search(
             best = cur
             bx, by, bt = best["sx"], best["sy"], best["theta"]
 
+    # ---- Phase 10: continuous local refinement of (sx, sy, theta) ----
+    # The grid/polish result (bx, by, bt) is quantized to grid nodes. Refine
+    # optimises phase-correlation PSR continuously from that start, then the
+    # final translation pass below recovers the residual shift at the optimum.
+    n_refine = 0
+    if refine:
+        bx, by, bt, refined_psr, n_refine = refine_transform(
+            a, b, bx, by, bt,
+            window=window,
+            sx_bounds_frac=refine_sx_frac,
+            sy_bounds_frac=refine_sy_frac,
+            theta_bounds_deg=refine_theta_deg,
+        )
+        total += n_refine
+
     # ---- final translation at best (sx, sy, theta) ----
     psr, peak, dx, dy, ws = _evaluate(a, b, bx, by, bt, window)
     # ``warp_content`` places injected content at exactly ``H . p`` (forward),
@@ -320,6 +447,7 @@ def search(
         coarse_count=coarse_each ** 3,
         fine_count=(fine_passes * (fine_each ** 3)
                     + (polish_passes * (polish_each ** 3) if polish else 0)),
+        n_refine=n_refine,
         H_apply=H,
     )
 
