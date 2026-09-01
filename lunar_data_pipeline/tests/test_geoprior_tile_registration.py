@@ -1,4 +1,4 @@
-"""Tests for geoprior_tile_registration.py (Phase 11).
+﻿"""Tests for geoprior_tile_registration.py (Phase 11).
 
 The geolocation-prior tile-vote module (Phase 11's answer to the Phase 10
 blocker -- a full-canvas phase-correlation translation that is ~60-90 px
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 

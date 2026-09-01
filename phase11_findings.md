@@ -131,3 +131,36 @@ perturbed prior) — **PASS**: Stage A replicates the audit gate exactly
 the pipeline's injected transform within pre-stated thresholds (translation
 <10 px vs ±20 px prior noise, scale 0.02, rotation 3.0° derived from the
 ~30 px/186 px lever arm, inlier ratio ≥0.5).
+## 8. Phase 11b (negative result): global ECC refinement is NOT viable here
+
+A pre-stated follow-up experiment asked whether a GLOBAL local optimiser --
+OpenCV ECC (`cv2.findTransformECC`, `MOTION_AFFINE`) -- could refine the
+navigation-prior affine (23.1 px) toward the geolocation floor, jointly
+optimising the linear part AND the translation (the exact degree of freedom
+Phase 10's two-stage pipeline got wrong).
+
+**Result: the synthetic gate FAILS, and the failure is robust and
+reproducible.** ECC does not converge on this terrain even from a
+near-correct seed on CLEAN synthetic pairs that are exactly related by an
+affine warp, across:
+
+- image sizes 96-372 px;
+- translation-only, scale+rotation, and residual-scale perturbations;
+- both the naive single-level call and a coarse-to-fine 2-level pyramid
+  (the standard remedy for ECC non-convergence);
+- two Gaussian-filter settings.
+
+Where ECC "converges" it lands on a wrong local optimum (cc ~0.18, ~20-35 px
+error). This is an OpenCV-5.0 affine-ECC numerical-fragility finding, not a
+data artifact: the gate construction was verified correct (both views are
+windows of one canvas related by the injected transform, no flat borders).
+
+**Discipline note:** this is exactly what the gate-first methodology is for --
+it rejected a proposed method BEFORE it could produce a misleading real-data
+number. The experiment was not tuned to pass; it is reported as a negative
+result. The Phase-11 operating point stands: **navigation prior + local
+content verification (23.1 / 23.7 px median), not global search or global
+local refinement.**
+
+Artifacts: the ECC experiment code was removed after the negative gate; this
+section is the permanent record. `refine_ecc` is not part of the module.
