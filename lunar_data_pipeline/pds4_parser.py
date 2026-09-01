@@ -85,6 +85,13 @@ class LunarProduct:
     sun_elevation_deg: float | None = None
     sun_azimuth_deg: float | None = None
     solar_incidence_deg: float | None = None
+    # Spectral products (IIRS) declare a third Axis_Array (BAND); 1 for the
+    # single-band 2-D OHRC/TMC-2 arrays.
+    bands: int = 1
+    # Declared byte size and MD5 from the <File> block -- integrity anchors
+    # for verifying a download against its label.
+    file_size_bytes: int | None = None
+    md5_checksum: str | None = None
 
 
 def _local(tag: str) -> str:
@@ -195,8 +202,18 @@ def _extract_footprint(root: ET.Element) -> list[tuple[float, float]]:
 
 
 def _extract_dimensions(root: ET.Element) -> tuple[int | None, int | None, str]:
-    """Extract (lines, samples, datatype) from Array_2D_Image."""
+    """Extract (lines, samples, datatype) from a 2-D or 3-D array object.
+
+    OHRC/TMC-2 products declare ``Array_2D_Image``; IIRS spectral cubes declare
+    ``Array_3D_Spectrum`` (BAND/LINE/SAMPLE, band-sequential). Axis names are
+    matched case-insensitively (ISDA labels use both "Line" and "LINE").
+    """
     array = _first(root, "Array_2D_Image")
+    if array is None:
+        for cube_name in ("Array_3D_Spectrum", "Array_3D_Image"):
+            array = _first(root, cube_name)
+            if array is not None:
+                break
     lines: int | None = None
     samples: int | None = None
     datatype = ""
@@ -228,6 +245,35 @@ def _resolve_image_path(root: ET.Element, label_path: Path) -> Path | None:
     if not file_name:
         return None
     return (label_path.parent / file_name).resolve()
+
+
+def _extract_bands(root: ET.Element) -> int:
+    """Return the BAND axis count for spectral cubes (1 for 2-D images)."""
+    for array_name in ("Array_3D_Spectrum", "Array_3D_Image"):
+        el = _first(root, array_name)
+        if el is None:
+            continue
+        for axis in _all(el, "Axis_Array"):
+            if (_child_text(axis, "axis_name") or "").strip().lower() == "band":
+                try:
+                    return int(_child_text(axis, "elements") or 1)
+                except ValueError:
+                    return 1
+    return 1
+
+
+def _extract_file_meta(root: ET.Element) -> tuple[int | None, str | None]:
+    """Return (file_size_bytes, md5_checksum) declared in the <File> block."""
+    file_el = _first(root, "File")
+    if file_el is None:
+        return None, None
+    size_text = _child_text(file_el, "file_size")
+    md5 = (_child_text(file_el, "md5_checksum") or "").strip() or None
+    try:
+        size = int(size_text) if size_text else None
+    except ValueError:
+        size = None
+    return size, md5
 
 
 def find_geometry_csv(label_path: Path) -> Path | None:
@@ -318,6 +364,8 @@ def parse_label(label_path: str | Path) -> LunarProduct | None:
     sun_elevation = _node_float("sun_elevation")
     sun_azimuth = _node_float("sun_azimuth")
     solar_incidence = _node_float("solar_incidence")
+    file_size, md5 = _extract_file_meta(root)
+    time_coords = _first(root, "Time_Coordinates")
 
     product = LunarProduct(
         instrument=instrument,
@@ -338,8 +386,19 @@ def parse_label(label_path: str | Path) -> LunarProduct | None:
         area=(_child_text(product_params, "area") or None)
         if product_params is not None
         else None,
-        start_time=(_child_text(root, "start_date_time")),
-        stop_time=(_child_text(root, "stop_date_time")),
+        start_time=(
+            _child_text(time_coords, "start_date_time")
+            if time_coords is not None
+            else None
+        ),
+        stop_time=(
+            _child_text(time_coords, "stop_date_time")
+            if time_coords is not None
+            else None
+        ),
+        bands=_extract_bands(root),
+        file_size_bytes=file_size,
+        md5_checksum=md5,
         geometry_csv_path=find_geometry_csv(label_path),
         sun_elevation_deg=sun_elevation,
         sun_azimuth_deg=sun_azimuth,

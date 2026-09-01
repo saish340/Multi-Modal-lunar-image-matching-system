@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from lunar_data_pipeline.pds4_parser import (
@@ -61,6 +62,41 @@ NS_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
         <elements>{samples}</elements>
       </Axis_Array>
     </Array_2D_Image>
+  </File_Area_Observational>
+</Product_Observational>
+"""
+
+IIRS_CUBE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<Product_Observational xmlns="http://pds.nasa.gov/pds4/pds/v1"
+                       xmlns:isda="https://isda.issdc.gov.in/pds4/isda/v1">
+  <Identification_Area>
+    <logical_identifier>urn:isro:isda:ch2_cho.iir:data_calibrated:x</logical_identifier>
+  </Identification_Area>
+  <Observation_Area>
+    <Time_Coordinates>
+      <start_date_time>2023-12-25T19:04:12.2779Z</start_date_time>
+      <stop_date_time>2023-12-25T19:15:33.5758Z</stop_date_time>
+    </Time_Coordinates>
+    <Mission_Area>
+      <isda:Geometry_Parameters>
+{corner_blocks}
+      </isda:Geometry_Parameters>
+    </Mission_Area>
+  </Observation_Area>
+  <File_Area_Observational>
+    <File>
+      <file_name>cube.qub</file_name>
+      <file_size unit="byte">320000000</file_size>
+      <md5_checksum>abc123def456</md5_checksum>
+    </File>
+    <Array_3D_Spectrum>
+      <Element_Array>
+        <data_type>IEEE754LSBSingle</data_type>
+      </Element_Array>
+      <Axis_Array><axis_name>BAND</axis_name><elements>256</elements></Axis_Array>
+      <Axis_Array><axis_name>LINE</axis_name><elements>1250</elements></Axis_Array>
+      <Axis_Array><axis_name>Sample</axis_name><elements>250</elements></Axis_Array>
+    </Array_3D_Spectrum>
   </File_Area_Observational>
 </Product_Observational>
 """
@@ -187,6 +223,15 @@ class TestParseLabel:
         assert product.file_path.exists()
         assert product.file_path.name.endswith(".img")
 
+    def test_parses_acquisition_time_from_nested_time_coordinates(self, tmp_path):
+        """start/stop live under Observation_Area/Time_Coordinates, not root."""
+        label = write_label(tmp_path, refined=REFINED)
+
+        product = parse_label(label)
+
+        assert product.start_time == "2026-01-03T06:09:04.137Z"
+        assert product.stop_time == "2026-01-03T06:09:20.520Z"
+
     def test_parses_sun_geometry_from_label(self, tmp_path):
         label = write_label(
             tmp_path,
@@ -214,6 +259,47 @@ class TestParseLabel:
         assert product.sun_elevation_deg is None
         assert product.sun_azimuth_deg is None
         assert product.solar_incidence_deg is None
+
+    def test_parses_array_3d_spectrum_cube(self, tmp_path):
+        """IIRS-style cube label: bands, file size/md5 and times all parse."""
+        label = write_label(
+            tmp_path,
+            stem="ch2_iir_nci_20231225T1904122779_d_img_d18",
+            create_image=False,
+            raw_xml=IIRS_CUBE_XML.format(
+                corner_blocks=corners_xml("Refined_Corner_Coordinates", REFINED)
+            ),
+        )
+
+        product = parse_label(label)
+
+        assert product is not None
+        assert product.instrument == "IIRS"
+        assert product.bands == 256
+        assert product.lines == 1250
+        assert product.samples == 250
+        assert product.datatype == "IEEE754LSBSingle"
+        assert product.file_size_bytes == 320000000
+        assert product.md5_checksum == "abc123def456"
+        assert product.start_time == "2023-12-25T19:04:12.2779Z"
+        assert product.stop_time == "2023-12-25T19:15:33.5758Z"
+
+    def test_expected_file_size_accounts_for_bands(self, tmp_path):
+        """expected_file_size must include the band axis for cubes."""
+        from lunar_data_pipeline.image_loader import expected_file_size
+
+        label = write_label(
+            tmp_path,
+            stem="ch2_iir_nci_20231225T1904122779_d_img_d18",
+            create_image=False,
+            raw_xml=IIRS_CUBE_XML.format(
+                corner_blocks=corners_xml("Refined_Corner_Coordinates", REFINED)
+            ),
+        )
+
+        product = parse_label(label)
+
+        assert expected_file_size(product) == 256 * 1250 * 250 * 4
 
     def test_prefers_refined_over_system_corners(self, tmp_path):
         label = write_label(
@@ -346,3 +432,98 @@ class TestGeometryCsvDiscovery:
         label.write_text("<dummy/>", encoding="utf-8")
 
         assert find_geometry_csv(label) is None
+
+
+IIRS_RAW = """<?xml version="1.0" encoding="UTF-8"?>
+<Product_Observational xmlns="http://pds.nasa.gov/pds4/pds/v1"
+                       xmlns:isda="https://isda.issdc.gov.in/pds4/isda/v1">
+  <Identification_Area>
+    <logical_identifier>urn:isro:isda:ch2_cho.iir:data_calibrated:x</logical_identifier>
+    <version_id>1.0</version_id>
+    <product_class>Product_Observational</product_class>
+  </Identification_Area>
+  <Observation_Area>
+    <Time_Coordinates>
+      <start_date_time>2023-12-25T19:04:12.2779Z</start_date_time>
+      <stop_date_time>2023-12-25T19:15:33.5758Z</stop_date_time>
+    </Time_Coordinates>
+    <Mission_Area>
+      <isda:Product_Parameters>
+        <isda:pixel_resolution unit="m/pixel">48.17</isda:pixel_resolution>
+      </isda:Product_Parameters>
+    </Mission_Area>
+  </Observation_Area>
+  <File_Area_Observational>
+    <File>
+      <file_name>ch2_iir_nci_x_d_img_d18.qub</file_name>
+      <file_size unit="byte">3287552000</file_size>
+      <md5_checksum>1a87b420b0aab587e82ecf1a8ac871ab</md5_checksum>
+    </File>
+    <Array_3D_Spectrum>
+      <offset unit="byte">0</offset>
+      <axis_index_order>Last Index Fastest</axis_index_order>
+      <Element_Array>
+        <data_type>IEEE754LSBSingle</data_type>
+      </Element_Array>
+      <Axis_Array>
+        <axis_name>BAND</axis_name>
+        <elements>256</elements>
+        <sequence_number>1</sequence_number>
+      </Axis_Array>
+      <Axis_Array>
+        <axis_name>LINE</axis_name>
+        <elements>12842</elements>
+        <sequence_number>2</sequence_number>
+      </Axis_Array>
+      <Axis_Array>
+        <axis_name>SAMPLE</axis_name>
+        <elements>250</elements>
+        <sequence_number>3</sequence_number>
+      </Axis_Array>
+    </Array_3D_Spectrum>
+  </File_Area_Observational>
+</Product_Observational>
+"""
+
+
+class TestSpectralCubeLabels:
+    """IIRS-style Array_3D_Spectrum labels: bands, dtype and file integrity."""
+
+    def test_parses_iirs_spectrum_cube(self, tmp_path):
+        label = write_label(
+            tmp_path,
+            stem="ch2_iir_nci_20231225T1904122779_d_img_d18",
+            raw_xml=IIRS_RAW,
+        )
+
+        product = parse_label(label)
+
+        assert product is not None
+        assert product.instrument == "IIRS"
+        assert product.bands == 256
+        assert product.lines == 12842
+        assert product.samples == 250
+        assert product.datatype == "IEEE754LSBSingle"
+        assert product.pixel_resolution_m == pytest.approx(48.17)
+        assert product.file_size_bytes == 3287552000
+        assert product.md5_checksum == "1a87b420b0aab587e82ecf1a8ac871ab"
+
+    def test_band_aware_expected_file_size_and_dtype(self, tmp_path):
+        from lunar_data_pipeline.image_loader import expected_file_size, numpy_dtype
+
+        label = write_label(
+            tmp_path,
+            stem="ch2_iir_nci_x_d_img_d18",
+            raw_xml=IIRS_RAW,
+        )
+        product = parse_label(label)
+
+        assert numpy_dtype("IEEE754LSBSingle") == np.dtype("<f4")
+        assert expected_file_size(product) == 256 * 12842 * 250 * 4
+
+    def test_single_band_default_for_2d_labels(self, tmp_path):
+        label = write_label(tmp_path, refined=REFINED)
+
+        product = parse_label(label)
+
+        assert product.bands == 1

@@ -5,7 +5,7 @@ container format), described by the PDS4 label fields that
 ``pds4_parser.parse_label`` already extracted:
 
 - ``datatype``: PDS4 element type, e.g. ``UnsignedByte`` (OHRC calibrated),
-  ``UnsignedLSB2`` (TMC-2 calibrated)
+  ``UnsignedLSB2`` (TMC-2 calibrated), ``IEEE754LSBSingle`` (IIRS cubes)
 - shape: ``lines`` x ``samples`` from the Axis_Array entries
 - byte order: suffix (LSB/MSB); calibrated OHRC/TMC products observed so far
   have zero-offset, band-sequential, single-band arrays
@@ -43,6 +43,11 @@ PDS4_NUMPY_DTYPES = {
     "SignedMSB4": np.dtype(">i4"),
     "IEEEReal4": np.dtype("<f4"),
     "IEEEReal8": np.dtype("<f8"),
+    # Explicit IEEE names used by ISDA spectral-cube (IIRS) radiance products.
+    "IEEE754LSBSingle": np.dtype("<f4"),
+    "IEEE754MSBSingle": np.dtype(">f4"),
+    "IEEE754LSBDouble": np.dtype("<f8"),
+    "IEEE754MSBDouble": np.dtype(">f8"),
 }
 
 
@@ -58,8 +63,9 @@ def numpy_dtype(pds4_data_type: str) -> np.dtype:
 
 
 def expected_file_size(product: LunarProduct) -> int:
+    """Byte size implied by the label geometry (bands included for cubes)."""
     itemsize = numpy_dtype(product.datatype).itemsize
-    return product.lines * product.samples * itemsize
+    return product.lines * product.samples * max(product.bands, 1) * itemsize
 
 
 def load_image(

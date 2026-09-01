@@ -1,0 +1,312 @@
+{
+  "s1_integrity": {
+    "products": {
+      "OHRC": {
+        "product_id": "ch2_ohr_nrp_20200827T0030107497_d_img_d18",
+        "instrument": "OHRC",
+        "lines": 101075,
+        "samples": 12000,
+        "bands": 1,
+        "datatype": "UnsignedByte",
+        "pixel_resolution_m": 0.24,
+        "projection": "Polar stereographic",
+        "area": "South Pole",
+        "start_time": "2020-08-27T00:30:10.7497Z",
+        "stop_time": "2020-08-27T00:30:27.1333Z",
+        "sun_elevation_deg": 8.991401,
+        "sun_azimuth_deg": 60.862141,
+        "solar_incidence_deg": 81.008599,
+        "file_exists": true,
+        "integrity": {
+          "actual_bytes": 1212900000,
+          "declared_bytes": 1212900000,
+          "label_implied_bytes": 1212900000,
+          "declared_match": true,
+          "container_overhead_bytes": 0,
+          "size_match": true,
+          "md5_actual": "8af8b0e87086ed903039d5c55433a096",
+          "md5_declared": "8af8b0e87086ed903039d5c55433a096",
+          "md5_match": true
+        },
+        "pixels": {
+          "path": "ch2_ohr_nrp_20200827T0030107497_d_img_d18.img",
+          "sample": {
+            "shape": [
+              64,
+              64
+            ],
+            "finite_fraction": 1.0,
+            "min": 15.0,
+            "median": 50.0,
+            "max": 154.0,
+            "std": 29.7219
+          },
+          "read_via": "image_loader.load_image (numpy.memmap)"
+        }
+      },
+      "TMC2": {
+        "product_id": "ch2_tmc_ndn_20231101T0125121377_d_oth_d18",
+        "instrument": "TMC2",
+        "lines": 169968,
+        "samples": 56156,
+        "bands": 1,
+        "datatype": "UnsignedLSB2",
+        "pixel_resolution_m": null,
+        "projection": "Polar stereographic",
+        "area": "South Pole",
+        "start_time": "2023-11-01T01:25:12.1377Z",
+        "stop_time": "2023-11-01T01:35:26.9702Z",
+        "sun_elevation_deg": 7.897945,
+        "sun_azimuth_deg": 289.752406,
+        "solar_incidence_deg": 82.102055,
+        "file_exists": true,
+        "integrity": {
+          "actual_bytes": 19092166591,
+          "declared_bytes": 19092166591,
+          "label_implied_bytes": 19089446016,
+          "declared_match": true,
+          "container_overhead_bytes": 2720575,
+          "size_match": true,
+          "md5_actual": "33211ea6ffe17a7f721c0f29999adea7",
+          "md5_declared": "33211ea6ffe17a7f721c0f29999adea7",
+          "md5_match": true
+        },
+        "pixels": {
+          "path": "ch2_tmc_ndn_20231101T0125121377_d_oth_d18.tif",
+          "sample": {
+            "window@25%": {
+              "shape": [
+                32768
+              ],
+              "finite_fraction": 1.0,
+              "min": 0.0,
+              "median": 0.0,
+              "max": 0.0,
+              "std": 0.0
+            },
+            "window@50%": {
+              "shape": [
+                32768
+              ],
+              "finite_fraction": 1.0,
+              "min": 0.0,
+              "median": 0.0,
+              "max": 36352.0,
+              "std": 1676.8982
+            },
+            "window@75%": {
+              "shape": [
+                32768
+              ],
+              "finite_fraction": 1.0,
+              "min": 0.0,
+              "median": 0.0,
+              "max": 37120.0,
+              "std": 3955.7507
+            }
+          },
+          "read_via": "raw uint16 window reads (full decode deferred to GDAL)"
+        }
+      },
+      "IIRS": {
+        "product_id": "ch2_iir_nci_20231225T1904122779_d_img_d18",
+        "instrument": "IIRS",
+        "lines": 12842,
+        "samples": 250,
+        "bands": 256,
+        "datatype": "IEEE754LSBSingle",
+        "pixel_resolution_m": 48.17,
+        "projection": "Selenographic",
+        "area": "Equatorial",
+        "start_time": "2023-12-25T19:04:12.2779Z",
+        "stop_time": "2023-12-25T19:15:33.5758Z",
+        "sun_elevation_deg": 37.789928,
+        "sun_azimuth_deg": 73.085993,
+        "solar_incidence_deg": 52.210072,
+        "file_exists": true,
+        "integrity": {
+          "actual_bytes": 3287552000,
+          "declared_bytes": 3287552000,
+          "label_implied_bytes": 3287552000,
+          "declared_match": true,
+          "container_overhead_bytes": 0,
+          "size_match": true,
+          "md5_actual": "1a87b420b0aab587e82ecf1a8ac871ab",
+          "md5_declared": "1a87b420b0aab587e82ecf1a8ac871ab",
+          "md5_match": true
+        },
+        "pixels": {
+          "path": "ch2_iir_nci_20231225T1904122779_d_img_d18.qub",
+          "sample": {
+            "band_0": {
+              "shape": [
+                128,
+                250
+              ],
+              "finite_fraction": 1.0,
+              "min": 0.0,
+              "median": 2530.8165283203125,
+              "max": 12731.3173828125,
+              "std": 785.0556
+            },
+            "band_63": {
+              "shape": [
+                128,
+                250
+              ],
+              "finite_fraction": 1.0,
+              "min": 304.77191162109375,
+              "median": 597.9617309570312,
+              "max": 858.2245483398438,
+              "std": 61.4074
+            },
+            "band_127": {
+              "shape": [
+                128,
+                250
+              ],
+              "finite_fraction": 1.0,
+              "min": 85.04682159423828,
+              "median": 177.87034606933594,
+              "max": 290.2908935546875,
+              "std": 22.763
+            },
+            "band_255": {
+              "shape": [
+                128,
+                250
+              ],
+              "finite_fraction": 1.0,
+              "min": 0.0,
+              "median": 658.3865661621094,
+              "max": 1607.4114990234375,
+              "std": 190.4521
+            }
+          },
+          "read_via": "numpy.memmap (band-sequential float32)"
+        }
+      }
+    }
+  },
+  "s2_overlap": {
+    "tif": {
+      "width": 56156,
+      "height": 169968,
+      "ps_m": 5.0,
+      "k0": 1.0,
+      "lon0": 0.0,
+      "geokeys": {
+        "GTModelType": "1",
+        "GTRasterType": "1",
+        "key1026": "Polar StereoGraphic",
+        "GeogType": "32767",
+        "GeogCitation": "GCS Name = Polar StereoGraphic|Datum = Moon Spheroid|Ellipsoid = Moon Spheroid|Primem = Reference_Meridian",
+        "key2050": "32767",
+        "key2054": "9102",
+        "GeogSemiMajorAxis": "32767",
+        "GeogSemiMinorAxis": "1737400.0",
+        "key2058": "1737400.0",
+        "key2061": "0.0",
+        "ProjectedCSType": "32767",
+        "key3074": "32767",
+        "ProjCoordTrans": "15",
+        "ProjLinearUnits": "9001",
+        "ProjNatOriginLat": "-90.0",
+        "ProjFalseEasting": "0.0",
+        "ProjFalseNorthing": "0.0",
+        "key3092": "1.0",
+        "key3095": "0.0"
+      }
+    },
+    "tmc_selfcheck": {
+      "label_footprint_inside_raster": false,
+      "wraps_projection_origin": false,
+      "pixel_extents": {
+        "width_km": 18.845,
+        "length_km": 979.815,
+        "diagonal_km": 979.922,
+        "col_range": [
+          -3962.6,
+          58816.5
+        ],
+        "row_range": [
+          -8321.0,
+          179630.6
+        ]
+      },
+      "gc_extents": {
+        "width_km": 18.838,
+        "length_km": 958.933,
+        "diagonal_km": 959.094
+      },
+      "width_ratio": 1.0004,
+      "length_ratio": 1.0218
+    },
+    "ohrc_in_tmc": {
+      "footprint_inside_raster": true,
+      "pixel_extents": {
+        "width_km": 3.115,
+        "length_km": 26.375,
+        "diagonal_km": 26.441,
+        "col_range": [
+          41086.2,
+          43470.3
+        ],
+        "row_range": [
+          39766.0,
+          44916.5
+        ]
+      },
+      "gc_extents": {
+        "width_km": 3.002,
+        "length_km": 25.453,
+        "diagonal_km": 25.516
+      },
+      "width_ratio": 1.0376,
+      "length_ratio": 1.0362,
+      "overlap_fraction_of_ohrc": 1.0,
+      "overlap_km2": 81.951,
+      "overlap_fraction_of_tmc_label_strip": 1.0
+    },
+    "verdict": "VERIFIED"
+  },
+  "s3_iirs": {
+    "verdict": "UNVERIFIED",
+    "strip_extent": {
+      "lines": 12842,
+      "samples": 250,
+      "length_km": 618.6,
+      "width_km": 12.0
+    },
+    "corner_quad_extent": {
+      "width_km": 13.467,
+      "length_km": 1089.242,
+      "diagonal_km": 1089.347
+    },
+    "length_ratio_quad_over_strip": 1.7608,
+    "width_ratio_quad_over_strip": 1.1222,
+    "iirs_in_tmc": {
+      "col_range": [
+        32669.2,
+        104317.0
+      ],
+      "row_range": [
+        -173030.3,
+        61646.5
+      ],
+      "inside_raster": false,
+      "overlap_fraction_of_iirs": 0.250998,
+      "overlap_km2": 4478.704
+    },
+    "iirs_vs_ohrc_overlap_fraction_of_iirs": 0.0,
+    "footprint_consistent_with_strip": false,
+    "reasons": [
+      "corner-quad extent inconsistent with strip dimensions",
+      "corner quad does not intersect the OHRC footprint"
+    ],
+    "acquisition_time_deltas_days": {
+      "iirs_minus_tmc": 54.74,
+      "iirs_minus_ohrc": 1215.78
+    }
+  }
+}
