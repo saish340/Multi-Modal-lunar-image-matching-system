@@ -1,0 +1,34 @@
+
+=== s1: integrity (size + MD5 + pixel samples) ===
+  [OHRC] ch2_ohr_nrp_20200827T0030107497_d_img_d18
+    101075x12000x1 UnsignedByte @ 0.24 m/px
+    size 1,212,900,000 B  declared 1,212,900,000  implied 1,212,900,000  match=True
+    md5 match=True
+  [TMC2] ch2_tmc_ndn_20231101T0125121377_d_oth_d18
+    169968x56156x1 UnsignedLSB2 @ None m/px
+    size 19,092,166,591 B  declared 19,092,166,591  implied 19,089,446,016  match=False
+    md5 match=True
+  [IIRS] ch2_iir_nci_20231225T1904122779_d_img_d18
+    12842x250x256 IEEE754LSBSingle @ 48.17 m/px
+    size 3,287,552,000 B  declared 3,287,552,000  implied 3,287,552,000  match=True
+    md5 match=True
+
+=== s2: OHRC <-> TMC-2 overlap (TIF's own ModelPixelScale/Tiepoint/GeoKeys) ===
+  raster 56156x169968 @ 5.0 m/px | k0=1.00000 lon0=0.0 | R_tif=32767 (script R=1737400)
+  GeoKeys: GTModelType=1 ProjectedCSType=32767 ProjCoordTrans=15 units=9001 natLat=-90.0
+  TMC label footprint inside raster: False (cols [-3962.6, 58816.5], rows [-8321.0, 179630.6]) wraps_projection_origin=False
+    extent ratio pixel/GC: width 1.0004, length 1.0218
+  OHRC footprint inside TMC raster: True (cols [41086.2, 43470.3], rows [39766.0, 44916.5])
+    extent ratio pixel/GC: width 1.0376, length 1.0362
+    overlap: 100.0% of OHRC = 81.951 km^2
+  s2 verdict: UNVERIFIED
+
+=== s3: IIRS overlap (footprint-vs-strip + TMC projection) ===
+  strip implies 618.6 x 12.0 km; corner quad spans 1089.242 x 13.467 km
+  ratios quad/strip: length 1.7608, width 1.1222
+  IIRS corners in TMC pixels: cols [32669.2, 104317.0], rows [-173030.3, 61646.5]  (inside raster: False)
+  overlap fraction: of IIRS 0.250998, with OHRC quad 0.0
+  s3 verdict: UNVERIFIED  reasons=['corner-quad extent inconsistent with strip dimensions']
+  acquisition gaps (days): IIRS-TMC 54.74, IIRS-OHRC 1215.78
+
+Wrote D:\Multi-Modal-lunar-image-matching-system\phase12_verify_output\verify_results.json

@@ -29,3 +29,9 @@ Thumbs.db
 # Temp scripts
 *.tmp
 *.temp
+# Chandrayaan-2 scientific data products (multi-GB; keep local only --
+# download from ISDA PRADAN / chmapbrowse.issdc.gov.in; labels + browse stay in git)
+ch2_*.img
+ch2_*.qub
+ch2_*.tif
+ch2_*.zip

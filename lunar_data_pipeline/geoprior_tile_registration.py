@@ -335,11 +335,18 @@ def tile_votes(a_disp: np.ndarray, b_disp: np.ndarray,
             ph = t2 + margin
             bx0, by0 = max(px_i - ph, 0), max(py_i - ph, 0)
             bx1, by1 = min(px_i + ph, b32.shape[1]), min(py_i + ph, b32.shape[0])
-            # The window must still cover the full +/-margin neighbourhood of
-            # the prediction (the true match may lie anywhere inside it and
-            # the tile must fit at that match): skip when it cannot.
-            if (bx0 > px_i - margin or by0 > py_i - margin
-                    or bx1 < px_i + margin or by1 < py_i + margin):
+            # The patch is the matchTemplate search image and the A tile is the
+            # template, so patch must be >= ``tile`` in both dims (2*t2) -- a hard
+            # OpenCV precondition. The +/-margin bound guarantees patch >=
+            # 2*margin >= 2*t2 only when margin >= t2; when margin < t2 (e.g. the
+            # Phase-12 verification search, margin=8 with tile=96) the edge-tile
+            # patch can shrink below tile and matchTemplate asserts. Fall back to
+            # +/-t2 in that case so edge tiles are skipped instead of crashing;
+            # when margin >= t2 (the audit config) require=max=margind and
+            # behaviour is byte-identical to before (no tuning).
+            require = max(margin, t2)
+            if (bx0 > px_i - require or by0 > py_i - require
+                    or bx1 < px_i + require or by1 < py_i + require):
                 skipped += 1
                 continue
             patch = b32[by0:by1, bx0:bx1]

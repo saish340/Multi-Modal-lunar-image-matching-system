@@ -1,0 +1,4 @@
+chain affine corner residuals (OHRC px): [11.51 11.51 11.55 11.55]
+TMC window: {'col': (41086, 43472), 'row': (39766, 44918)} A: (5152, 2386) B: (5152, 2386)
+synthetic gate (margin=80): FAIL
+GATE FAILED -- aborting before real-data registration
